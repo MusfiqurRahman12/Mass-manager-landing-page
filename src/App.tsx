@@ -6,7 +6,19 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { DashboardPage, HomePage, LoginPage, RegisterPage } from "./pages";
+import {
+  ChatPage,
+  DashboardPage,
+  DepositsPage,
+  ExpensesPage,
+  HomePage,
+  LoginPage,
+  MealsPage,
+  MembersPage,
+  RegisterPage,
+  ReportsPage,
+  SettingsPage,
+} from "./pages";
 
 function App() {
   return (
@@ -23,6 +35,62 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/meals"
+          element={
+            <ProtectedRoute>
+              <MealsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/expenses"
+          element={
+            <ProtectedRoute>
+              <ExpensesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/deposits"
+          element={
+            <ProtectedRoute>
+              <DepositsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/members"
+          element={
+            <ProtectedRoute requireManager>
+              <MembersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />
