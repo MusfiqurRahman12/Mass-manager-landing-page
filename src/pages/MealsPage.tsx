@@ -29,13 +29,8 @@ import {
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useForm } from "../hooks/useForm";
-import {
-  Meal,
-  MealCost,
-  mealService,
-  Member,
-  memberService,
-} from "../services";
+import type { Meal, MealCost, Member } from "../services";
+import { mealService, memberService } from "../services";
 import { cn } from "../utils";
 import { formatCurrency, formatNumber } from "../utils/format.utils";
 

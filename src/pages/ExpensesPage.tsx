@@ -1,44 +1,43 @@
-import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { toast } from "sonner";
 import {
-  Plus,
-  Edit,
-  Trash2,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  TrendingUp,
-  Calendar,
+  Droplets,
+  Edit,
+  Flame,
+  MoreHorizontal,
+  Plus,
   Receipt,
   ShoppingCart,
-  Zap,
-  Droplets,
-  Flame,
+  Trash2,
+  TrendingUp,
   Wrench,
-  MoreHorizontal,
+  Zap,
 } from "lucide-react";
-import { MainLayout } from "../components/layout";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
+  Button,
   Card,
   CardBody,
   CardHeader,
-  Button,
-  Input,
-  Select,
   DatePicker,
+  Input,
   Modal,
-  ModalHeader,
   ModalBody,
   ModalFooter,
-  Badge,
+  Select,
   Skeleton,
 } from "../components/common";
+import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useForm } from "../hooks/useForm";
-import { expenseService, Expense, ExpenseCategory } from "../services";
-import { formatCurrency, formatNumber } from "../utils/format.utils";
+import type { Expense, ExpenseCategory } from "../services";
+import { expenseService } from "../services";
 import { cn } from "../utils";
+import { formatCurrency, formatNumber } from "../utils/format.utils";
 
 // Types
 interface ExpenseFormValues {
@@ -49,17 +48,57 @@ interface ExpenseFormValues {
 }
 
 // Constants
-const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string; icon: React.ElementType; color: string }[] = [
-  { value: "electricity", label: "Electricity", icon: Zap, color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30" },
-  { value: "groceries", label: "Groceries", icon: ShoppingCart, color: "text-green-500 bg-green-100 dark:bg-green-900/30" },
-  { value: "maintenance", label: "Maintenance", icon: Wrench, color: "text-blue-500 bg-blue-100 dark:bg-blue-900/30" },
-  { value: "cleaning", label: "Cleaning", icon: Droplets, color: "text-cyan-500 bg-cyan-100 dark:bg-cyan-900/30" },
-  { value: "water", label: "Water", icon: Droplets, color: "text-blue-400 bg-blue-50 dark:bg-blue-900/20" },
-  { value: "gas", label: "Gas", icon: Flame, color: "text-orange-500 bg-orange-100 dark:bg-orange-900/30" },
-  { value: "other", label: "Other", icon: MoreHorizontal, color: "text-gray-500 bg-gray-100 dark:bg-gray-900/30" },
+const EXPENSE_CATEGORIES: {
+  value: ExpenseCategory;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+}[] = [
+  {
+    value: "electricity",
+    label: "Electricity",
+    icon: Zap,
+    color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30",
+  },
+  {
+    value: "groceries",
+    label: "Groceries",
+    icon: ShoppingCart,
+    color: "text-green-500 bg-green-100 dark:bg-green-900/30",
+  },
+  {
+    value: "maintenance",
+    label: "Maintenance",
+    icon: Wrench,
+    color: "text-blue-500 bg-blue-100 dark:bg-blue-900/30",
+  },
+  {
+    value: "cleaning",
+    label: "Cleaning",
+    icon: Droplets,
+    color: "text-cyan-500 bg-cyan-100 dark:bg-cyan-900/30",
+  },
+  {
+    value: "water",
+    label: "Water",
+    icon: Droplets,
+    color: "text-blue-400 bg-blue-50 dark:bg-blue-900/20",
+  },
+  {
+    value: "gas",
+    label: "Gas",
+    icon: Flame,
+    color: "text-orange-500 bg-orange-100 dark:bg-orange-900/30",
+  },
+  {
+    value: "other",
+    label: "Other",
+    icon: MoreHorizontal,
+    color: "text-gray-500 bg-gray-100 dark:bg-gray-900/30",
+  },
 ];
 
-const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map(c => ({
+const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map((c) => ({
   value: c.value,
   label: c.label,
 }));
@@ -133,12 +172,19 @@ export function ExpensesPage() {
     });
 
     return filtered;
-  }, [expenses, filterCategory, filterStartDate, filterEndDate, sortBy, sortOrder]);
+  }, [
+    expenses,
+    filterCategory,
+    filterStartDate,
+    filterEndDate,
+    sortBy,
+    sortOrder,
+  ]);
 
   const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
   const paginatedExpenses = filteredExpenses.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   // Summary calculations
@@ -452,7 +498,7 @@ export function ExpensesPage() {
                       <div
                         className={cn(
                           "p-2 rounded-lg inline-flex mb-2",
-                          cat.color
+                          cat.color,
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -593,10 +639,9 @@ export function ExpensesPage() {
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={(e) => {
-                    const [newSortBy, newSortOrder] = e.target.value.split("-") as [
-                      "date" | "amount",
-                      "asc" | "desc"
-                    ];
+                    const [newSortBy, newSortOrder] = e.target.value.split(
+                      "-",
+                    ) as ["date" | "amount", "asc" | "desc"];
                     setSortBy(newSortBy);
                     setSortOrder(newSortOrder);
                   }}
@@ -680,12 +725,14 @@ export function ExpensesPage() {
                             <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white">
                               {format(
                                 parseISO(expense.expense_date),
-                                "MMM dd, yyyy"
+                                "MMM dd, yyyy",
                               )}
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <div className={cn("p-1.5 rounded", colorClass)}>
+                                <div
+                                  className={cn("p-1.5 rounded", colorClass)}
+                                >
                                   <Icon className="h-4 w-4" />
                                 </div>
                                 <span className="text-sm text-neutral-900 dark:text-white capitalize">
@@ -733,7 +780,7 @@ export function ExpensesPage() {
                       Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                       {Math.min(
                         currentPage * ITEMS_PER_PAGE,
-                        filteredExpenses.length
+                        filteredExpenses.length,
                       )}{" "}
                       of {filteredExpenses.length} expenses
                     </p>
@@ -789,7 +836,9 @@ export function ExpensesPage() {
                   editForm.setValues({ ...editForm.values, category: value })
                 }
                 error={
-                  editForm.touched.category ? editForm.errors.category : undefined
+                  editForm.touched.category
+                    ? editForm.errors.category
+                    : undefined
                 }
                 options={CATEGORY_OPTIONS}
               />

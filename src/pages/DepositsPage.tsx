@@ -1,49 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { toast } from "sonner";
 import {
-  Plus,
-  Edit,
-  Trash2,
+  AlertCircle,
+  Calculator,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  Wallet,
+  Edit,
+  Plus,
+  Trash2,
   TrendingDown,
-  TrendingUp,
   Users,
-  AlertCircle,
-  CheckCircle,
-  Calculator,
+  Wallet,
 } from "lucide-react";
-import { MainLayout } from "../components/layout";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
+  Badge,
+  Button,
   Card,
   CardBody,
   CardHeader,
-  Button,
-  Input,
-  Select,
   DatePicker,
+  Input,
   Modal,
-  ModalHeader,
   ModalBody,
   ModalFooter,
-  Badge,
+  Select,
   Skeleton,
 } from "../components/common";
+import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useForm } from "../hooks/useForm";
-import {
-  depositService,
-  Deposit,
-  memberService,
-  Member,
-  mealService,
-  MealCost,
-} from "../services";
-import { formatCurrency, formatNumber } from "../utils/format.utils";
+import type { Deposit, MealCost, Member } from "../services";
+import { depositService, mealService, memberService } from "../services";
 import { cn } from "../utils";
+import { formatCurrency } from "../utils/format.utils";
 
 // Types
 interface DepositFormValues {
@@ -63,7 +55,9 @@ export function DepositsPage() {
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [mealCost, setMealCost] = useState<MealCost | null>(null);
-  const [meals, setMeals] = useState<{ member_id: string; meal_count: number }[]>([]);
+  const [meals, setMeals] = useState<
+    { member_id: string; meal_count: number }[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
@@ -81,16 +75,22 @@ export function DepositsPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [depositsData, membersData, costData, mealsData] = await Promise.all([
-        depositService.getDeposits(),
-        memberService.getMembers(),
-        mealService.getMealCost().catch(() => null),
-        mealService.getMeals(),
-      ]);
+      const [depositsData, membersData, costData, mealsData] =
+        await Promise.all([
+          depositService.getDeposits(),
+          memberService.getMembers(),
+          mealService.getMealCost().catch(() => null),
+          mealService.getMeals(),
+        ]);
       setDeposits(depositsData);
       setMembers(membersData);
       setMealCost(costData);
-      setMeals(mealsData.map((m) => ({ member_id: m.member_id, meal_count: m.meal_count })));
+      setMeals(
+        mealsData.map((m) => ({
+          member_id: m.member_id,
+          meal_count: m.meal_count,
+        })),
+      );
     } catch (error) {
       toast.error("Failed to load deposit data");
       console.error(error);
@@ -110,7 +110,7 @@ export function DepositsPage() {
         value: m.user_id,
         label: m.full_name,
       })),
-    [members]
+    [members],
   );
 
   const memberMap = useMemo(() => {
@@ -138,7 +138,7 @@ export function DepositsPage() {
     // Sort by date descending
     filtered.sort(
       (a, b) =>
-        new Date(b.deposit_date).getTime() - new Date(a.deposit_date).getTime()
+        new Date(b.deposit_date).getTime() - new Date(a.deposit_date).getTime(),
     );
 
     return filtered;
@@ -147,7 +147,7 @@ export function DepositsPage() {
   const totalPages = Math.ceil(filteredDeposits.length / ITEMS_PER_PAGE);
   const paginatedDeposits = filteredDeposits.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   // Summary calculations
@@ -413,7 +413,7 @@ export function DepositsPage() {
                     "p-3 rounded-lg",
                     currentBalance >= 0
                       ? "bg-green-100 dark:bg-green-900/30 text-green-600"
-                      : "bg-red-100 dark:bg-red-900/30 text-red-600"
+                      : "bg-red-100 dark:bg-red-900/30 text-red-600",
                   )}
                 >
                   <DollarSign className="h-5 w-5" />
@@ -425,9 +425,7 @@ export function DepositsPage() {
                   <p
                     className={cn(
                       "text-2xl font-bold",
-                      currentBalance >= 0
-                        ? "text-green-600"
-                        : "text-red-600"
+                      currentBalance >= 0 ? "text-green-600" : "text-red-600",
                     )}
                   >
                     {isLoading ? (
@@ -551,14 +549,16 @@ export function DepositsPage() {
                               "py-3 px-4 text-sm text-right font-semibold",
                               isDue && "text-red-600",
                               isCredit && "text-green-600",
-                              !isDue && !isCredit && "text-neutral-900 dark:text-white"
+                              !isDue &&
+                                !isCredit &&
+                                "text-neutral-900 dark:text-white",
                             )}
                           >
                             {isDue
                               ? `+${formatCurrency(balance.dueAmount)}`
                               : isCredit
-                              ? formatCurrency(balance.dueAmount)
-                              : "-"}
+                                ? formatCurrency(balance.dueAmount)
+                                : "-"}
                           </td>
                           <td className="py-3 px-4 text-center">
                             {isDue ? (
@@ -612,7 +612,7 @@ export function DepositsPage() {
                     </span>
                     <span className="text-xl font-bold text-red-600">
                       {formatCurrency(
-                        membersWithDue.reduce((sum, m) => sum + m.dueAmount, 0)
+                        membersWithDue.reduce((sum, m) => sum + m.dueAmount, 0),
                       )}
                     </span>
                   </div>
@@ -835,7 +835,7 @@ export function DepositsPage() {
                             <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white">
                               {format(
                                 parseISO(deposit.deposit_date),
-                                "MMM dd, yyyy"
+                                "MMM dd, yyyy",
                               )}
                             </td>
                             <td className="py-3 px-4">
@@ -893,7 +893,7 @@ export function DepositsPage() {
                       Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                       {Math.min(
                         currentPage * ITEMS_PER_PAGE,
-                        filteredDeposits.length
+                        filteredDeposits.length,
                       )}{" "}
                       of {filteredDeposits.length} deposits
                     </p>
