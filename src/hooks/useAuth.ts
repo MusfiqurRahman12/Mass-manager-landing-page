@@ -38,7 +38,7 @@ export function useRequireAuth() {
     }
   }, [isLoading, user]);
 
-  return { isReady };
+  return { isReady, user };
 }
 
 /**
