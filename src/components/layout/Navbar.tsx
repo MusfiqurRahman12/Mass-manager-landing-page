@@ -1,8 +1,8 @@
-import { LogOut, Menu } from "lucide-react";
+import { Bell, LogOut, Menu } from "lucide-react";
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth, useTheme } from "../../context";
-import { Button, NotificationBell } from "../common";
+import { Button } from "../common";
 
 export function Navbar() {
   const { user, logout } = useAuth();

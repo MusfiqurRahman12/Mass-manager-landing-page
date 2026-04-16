@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  Notification,
+  type Notification,
   notificationService,
 } from "../../services/notificationService";
 
@@ -68,14 +68,17 @@ export function NotificationBell() {
     }
   };
 
-  const handleMarkAsRead = async (notificationId: string, e?: React.MouseEvent) => {
+  const handleMarkAsRead = async (
+    notificationId: string,
+    e?: React.MouseEvent,
+  ) => {
     e?.stopPropagation();
     try {
       await notificationService.updateNotification(notificationId, true);
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === notificationId ? { ...n, is_read: true } : n
-        )
+          n.id === notificationId ? { ...n, is_read: true } : n,
+        ),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
@@ -239,7 +242,9 @@ export function NotificationBell() {
                       <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!notification.is_read && (
                           <button
-                            onClick={(e) => handleMarkAsRead(notification.id, e)}
+                            onClick={(e) =>
+                              handleMarkAsRead(notification.id, e)
+                            }
                             className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded"
                             title="Mark as read"
                           >

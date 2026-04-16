@@ -14,8 +14,12 @@ import {
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useRequireAuth } from "../hooks";
-import { Member, memberService } from "../services/memberService";
-import { Mess, messService, UpdateMessPayload } from "../services/messService";
+import { type Member, memberService } from "../services/memberService";
+import {
+  type Mess,
+  messService,
+  type UpdateMessPayload,
+} from "../services/messService";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -227,7 +231,7 @@ export function SettingsPage() {
   const handleDeleteMess = async () => {
     if (
       !confirm(
-        "Are you sure you want to delete this mess? This action cannot be undone."
+        "Are you sure you want to delete this mess? This action cannot be undone.",
       )
     ) {
       return;
@@ -240,7 +244,7 @@ export function SettingsPage() {
       window.location.href = "/";
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete mess"
+        error instanceof Error ? error.message : "Failed to delete mess",
       );
     }
   };
@@ -320,7 +324,7 @@ export function SettingsPage() {
             <div className="flex items-center gap-4">
               <div
                 className={`w-20 h-20 rounded-full ${getAvatarColor(
-                  authUser?.full_name || "User"
+                  authUser?.full_name || "User",
                 )} flex items-center justify-center text-white text-2xl font-bold`}
               >
                 {getInitials(authUser?.full_name || "User")}
@@ -416,7 +420,10 @@ export function SettingsPage() {
                   <Button onClick={handleSaveProfile}>Save Profile</Button>
                 </div>
               ) : (
-                <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditingProfile(true)}
+                >
                   Edit Profile
                 </Button>
               )}
@@ -444,7 +451,9 @@ export function SettingsPage() {
                 <button
                   key={option.value}
                   onClick={() =>
-                    handleThemeChange(option.value as "light" | "dark" | "system")
+                    handleThemeChange(
+                      option.value as "light" | "dark" | "system",
+                    )
                   }
                   className={`p-4 rounded-lg border-2 transition-all ${
                     theme === option.value
@@ -610,7 +619,11 @@ export function SettingsPage() {
 
             {isManager && (
               <div className="pt-4">
-                <Button onClick={handleSave} isLoading={isSaving} className="px-6">
+                <Button
+                  onClick={handleSave}
+                  isLoading={isSaving}
+                  className="px-6"
+                >
                   Save Changes
                 </Button>
               </div>

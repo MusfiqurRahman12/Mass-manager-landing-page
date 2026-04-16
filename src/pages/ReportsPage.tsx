@@ -13,11 +13,11 @@ import {
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useRequireAuth } from "../hooks";
-import { depositService, Deposit } from "../services/depositService";
-import { expenseService, Expense } from "../services/expenseService";
-import { mealService, Meal } from "../services/mealService";
-import { Member, memberService } from "../services/memberService";
-import { Month, monthService } from "../services/monthService";
+import { depositService, type Deposit } from "../services/depositService";
+import { expenseService, type Expense } from "../services/expenseService";
+import { mealService, type Meal } from "../services/mealService";
+import { memberService, type Member } from "../services/memberService";
+import { monthService, type Month } from "../services/monthService";
 import { pdfService } from "../services/pdfService";
 
 interface MemberSummary {
@@ -47,7 +47,7 @@ export function ReportsPage() {
 
   // Member detail modal
   const [selectedMember, setSelectedMember] = useState<MemberSummary | null>(
-    null
+    null,
   );
   const [showMemberModal, setShowMemberModal] = useState(false);
 
@@ -115,12 +115,9 @@ export function ReportsPage() {
   const totalMeals = memberSummaries.reduce((sum, m) => sum + m.totalMeals, 0);
   const totalDeposits = memberSummaries.reduce(
     (sum, m) => sum + m.totalDeposits,
-    0
+    0,
   );
-  const totalMealCost = memberSummaries.reduce(
-    (sum, m) => sum + m.mealCost,
-    0
-  );
+  const totalMealCost = memberSummaries.reduce((sum, m) => sum + m.mealCost, 0);
 
   // Expense breakdown by category
   const expenseByCategory: ExpenseByCategory[] = (() => {
@@ -129,7 +126,10 @@ export function ReportsPage() {
       categories[e.category] = (categories[e.category] || 0) + e.amount;
     });
 
-    const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+    const total = Object.values(categories).reduce(
+      (sum, amount) => sum + amount,
+      0,
+    );
 
     return Object.entries(categories)
       .map(([category, amount]) => ({
@@ -187,7 +187,7 @@ export function ReportsPage() {
       const blob = await pdfService.downloadMonthPDF(activeMonth.id);
       const monthName = new Date(activeMonth.month_year).toLocaleDateString(
         "en-US",
-        { month: "long", year: "numeric" }
+        { month: "long", year: "numeric" },
       );
       pdfService.triggerDownload(blob, `mess_statement_${monthName}.pdf`);
       toast.success("PDF downloaded successfully");
@@ -208,16 +208,16 @@ export function ReportsPage() {
     try {
       const blob = await pdfService.downloadMemberStatementPDF(
         memberId,
-        activeMonth.id
+        activeMonth.id,
       );
       const member = members.find((m) => m.user_id === memberId);
       const monthName = new Date(activeMonth.month_year).toLocaleDateString(
         "en-US",
-        { month: "long", year: "numeric" }
+        { month: "long", year: "numeric" },
       );
       pdfService.triggerDownload(
         blob,
-        `member_statement_${member?.full_name || "unknown"}_${monthName}.pdf`
+        `member_statement_${member?.full_name || "unknown"}_${monthName}.pdf`,
       );
       toast.success("Member statement downloaded");
     } catch (error) {
@@ -498,7 +498,7 @@ export function ReportsPage() {
                         <td className="py-3">
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(
-                              expense.category
+                              expense.category,
                             )}`}
                           >
                             {getCategoryIcon(expense.category)}
@@ -595,13 +595,17 @@ export function ReportsPage() {
       {/* Member Detail Modal */}
       {showMemberModal && selectedMember && (
         <Modal onClose={() => setShowMemberModal(false)}>
-          <ModalHeader>Member Statement - {selectedMember.member.full_name}</ModalHeader>
+          <ModalHeader>
+            Member Statement - {selectedMember.member.full_name}
+          </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                   <p className="text-sm text-neutral-500">Total Meals</p>
-                  <p className="text-2xl font-bold">{selectedMember.totalMeals}</p>
+                  <p className="text-2xl font-bold">
+                    {selectedMember.totalMeals}
+                  </p>
                 </div>
                 <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                   <p className="text-sm text-neutral-500">Meal Cost</p>
@@ -619,7 +623,9 @@ export function ReportsPage() {
                   <p className="text-sm text-neutral-500">Balance</p>
                   <p
                     className={`text-2xl font-bold ${
-                      selectedMember.balance >= 0 ? "text-success" : "text-error"
+                      selectedMember.balance >= 0
+                        ? "text-success"
+                        : "text-error"
                     }`}
                   >
                     {formatCurrency(selectedMember.balance)}
@@ -636,7 +642,8 @@ export function ReportsPage() {
                     </span>
                   ) : (
                     <span className="text-error">
-                      ⚠️ Needs to pay {formatCurrency(Math.abs(selectedMember.balance))}
+                      ⚠️ Needs to pay{" "}
+                      {formatCurrency(Math.abs(selectedMember.balance))}
                     </span>
                   )}
                 </p>

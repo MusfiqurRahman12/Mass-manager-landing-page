@@ -1,15 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  Badge,
-  Button,
-  Card,
-  LoadingSpinner,
-} from "../components/common";
+import { Badge, Button, Card, LoadingSpinner } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useRequireAuth } from "../hooks";
-import { Month, monthService } from "../services/monthService";
+import { type Month, monthService } from "../services/monthService";
 
 export function MonthHistoryPage() {
   const { isReady } = useRequireAuth();

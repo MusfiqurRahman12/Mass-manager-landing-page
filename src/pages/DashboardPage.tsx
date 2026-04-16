@@ -12,11 +12,10 @@ import {
   ModalHeader,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
-import { useAuth } from "../context";
 import { useRequireAuth } from "../hooks";
-import { Member, memberService } from "../services/memberService";
-import { MealCost, mealService } from "../services/mealService";
-import { Month, monthService } from "../services/monthService";
+import { type MealCost, mealService } from "../services/mealService";
+import { type Member, memberService } from "../services/memberService";
+import { type Month, monthService } from "../services/monthService";
 
 interface MonthlySummary {
   totalMeals: number;
@@ -91,7 +90,7 @@ export function DashboardPage() {
       loadDashboardData();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to start new month"
+        error instanceof Error ? error.message : "Failed to start new month",
       );
     } finally {
       setIsStartingMonth(false);
@@ -178,10 +177,7 @@ export function DashboardPage() {
                 </p>
               </div>
               {isManager && (
-                <Button
-                  size="sm"
-                  onClick={() => setShowStartMonthModal(true)}
-                >
+                <Button size="sm" onClick={() => setShowStartMonthModal(true)}>
                   Start Now
                 </Button>
               )}
@@ -251,13 +247,17 @@ export function DashboardPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                    <p className="text-sm text-neutral-500 mb-1">Opening Balance</p>
+                    <p className="text-sm text-neutral-500 mb-1">
+                      Opening Balance
+                    </p>
                     <p className="text-xl font-semibold">
                       {formatCurrency(activeMonth.opening_balance)}
                     </p>
                   </div>
                   <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                    <p className="text-sm text-neutral-500 mb-1">Closing Balance</p>
+                    <p className="text-sm text-neutral-500 mb-1">
+                      Closing Balance
+                    </p>
                     <p className="text-xl font-semibold">
                       {formatCurrency(activeMonth.closing_balance)}
                     </p>
@@ -267,7 +267,9 @@ export function DashboardPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                     <span className="text-neutral-600">Total Meals</span>
-                    <span className="font-medium">{activeMonth.total_meal}</span>
+                    <span className="font-medium">
+                      {activeMonth.total_meal}
+                    </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                     <span className="text-neutral-600">Total Cost</span>
@@ -311,7 +313,8 @@ export function DashboardPage() {
                   {action.label}
                 </button>
               ))}
-            </div>          </Card>
+            </div>{" "}
+          </Card>
         </div>
       </div>
 
@@ -353,8 +356,8 @@ export function DashboardPage() {
 
               <div className="p-4 bg-warning/10 rounded-lg">
                 <p className="text-sm text-warning">
-                  <strong>Warning:</strong> Starting a new month will close
-                  the current month and calculate final settlements. This action
+                  <strong>Warning:</strong> Starting a new month will close the
+                  current month and calculate final settlements. This action
                   cannot be undone.
                 </p>
               </div>
@@ -382,10 +385,7 @@ export function DashboardPage() {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleStartNewMonth}
-              isLoading={isStartingMonth}
-            >
+            <Button onClick={handleStartNewMonth} isLoading={isStartingMonth}>
               Start New Month
             </Button>
           </ModalFooter>

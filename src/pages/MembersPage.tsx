@@ -14,12 +14,8 @@ import {
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useRequireAuth } from "../hooks";
-import {
-  Member,
-  memberService,
-  TransferManagerPayload,
-} from "../services/memberService";
-import { isValidEmail, isValidInviteCode } from "../utils";
+import { type Member, memberService } from "../services/memberService";
+import { isValidEmail } from "../utils";
 
 interface InviteCode {
   code: string;
@@ -91,7 +87,7 @@ export function MembersPage() {
       loadMembers();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to add member"
+        error instanceof Error ? error.message : "Failed to add member",
       );
     } finally {
       setIsAdding(false);
@@ -263,7 +259,7 @@ export function MembersPage() {
               <div className="flex items-center gap-4">
                 <div
                   className={`w-12 h-12 rounded-full ${getAvatarColor(
-                    member.full_name
+                    member.full_name,
                   )} flex items-center justify-center text-white font-semibold`}
                 >
                   {getInitials(member.full_name)}
@@ -387,7 +383,7 @@ export function MembersPage() {
             <div className="flex items-center gap-4 mb-6">
               <div
                 className={`w-16 h-16 rounded-full ${getAvatarColor(
-                  selectedMember.full_name
+                  selectedMember.full_name,
                 )} flex items-center justify-center text-white text-xl font-semibold`}
               >
                 {getInitials(selectedMember.full_name)}
@@ -411,13 +407,13 @@ export function MembersPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                 <span className="text-neutral-500">Joined</span>
-                <span>{new Date(selectedMember.joined_at).toLocaleDateString()}</span>
+                <span>
+                  {new Date(selectedMember.joined_at).toLocaleDateString()}
+                </span>
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                 <span className="text-neutral-500">Status</span>
-                <span>
-                  {selectedMember.is_active ? "Active" : "Inactive"}
-                </span>
+                <span>{selectedMember.is_active ? "Active" : "Inactive"}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                 <span className="text-neutral-500">User ID</span>
