@@ -27,9 +27,9 @@ export function LoginPage() {
     validate,
     onSubmit: async (values) => {
       try {
-        await login(values.email, values.password);
+        const hasMess = await login(values.email, values.password);
         toast.success("Logged in successfully!");
-        navigate("/dashboard");
+        navigate(hasMess ? "/dashboard" : "/onboarding");
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Login failed");
       }

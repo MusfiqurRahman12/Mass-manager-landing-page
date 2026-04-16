@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { useAuth } from "./context";
 import {
   ChatPage,
   DashboardPage,
@@ -15,10 +16,32 @@ import {
   LoginPage,
   MealsPage,
   MembersPage,
+  MonthHistoryPage,
+  OnboardingPage,
   RegisterPage,
   ReportsPage,
   SettingsPage,
 } from "./pages";
+
+// Onboarding route wrapper - only accessible if user doesn't have a mess
+function OnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect to dashboard if user already has a mess
+  if (user?.mess_id) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 function App() {
   return (
@@ -28,6 +51,16 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Onboarding Route - only for users without a mess */}
+        <Route
+          path="/onboarding"
+          element={
+            <OnboardingRoute>
+              <OnboardingPage />
+            </OnboardingRoute>
+          }
+        />
 
         {/* Protected Routes */}
         <Route
@@ -83,6 +116,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/month-history"
+          element={
+            <ProtectedRoute>
+              <MonthHistoryPage />
             </ProtectedRoute>
           }
         />

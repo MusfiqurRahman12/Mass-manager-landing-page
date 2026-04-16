@@ -12,6 +12,7 @@ interface User {
   email: string;
   full_name: string;
   role: "member" | "manager";
+  mess_id: string | null;
   created_at: string;
 }
 
@@ -54,12 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       await authService.login({ email, password });
       const userInfo = await authService.getCurrentUserInfo();
       setUser(userInfo);
+      return !!userInfo.mess_id;
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     fullName: string,
     password: string,
-  ) => {
+  ): Promise<boolean> => {
     setIsLoading(true);
     try {
       const newUser = await authService.register({
@@ -78,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
       setUser(newUser);
+      return !!newUser.mess_id;
     } finally {
       setIsLoading(false);
     }

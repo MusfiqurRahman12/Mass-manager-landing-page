@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { LoadingSpinner } from "../components/common";
 import { useAuth } from "../context";
 
@@ -13,6 +13,7 @@ export function ProtectedRoute({
   requireManager = false,
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <LoadingSpinner fullScreen message="Loading..." />;
@@ -20,6 +21,12 @@ export function ProtectedRoute({
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Redirect to onboarding if user is not in any mess
+  // Don't redirect if already on onboarding page
+  if (!user?.mess_id && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
   }
 
   if (requireManager && user?.role !== "manager") {

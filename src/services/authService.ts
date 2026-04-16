@@ -5,6 +5,7 @@ export interface User {
   email: string;
   full_name: string;
   role: "member" | "manager";
+  mess_id: string | null;
   created_at: string;
 }
 

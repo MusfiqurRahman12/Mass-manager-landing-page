@@ -49,9 +49,9 @@ export function RegisterPage() {
     validate,
     onSubmit: async (values) => {
       try {
-        await register(values.email, values.fullName, values.password);
+        const hasMess = await register(values.email, values.fullName, values.password);
         toast.success("Account created successfully!");
-        navigate("/dashboard");
+        navigate(hasMess ? "/dashboard" : "/onboarding");
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Registration failed",

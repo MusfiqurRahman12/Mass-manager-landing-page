@@ -49,29 +49,29 @@
 - [x] Due amount calculation
 - [x] Settlement options
 
-## Phase 5: Member Management - Manager Only (Ready to Build)
+## Phase 5: Member Management - Manager Only ✅ (Completed)
 
-- [ ] Members list with avatars
-- [ ] Add member modal
-  - [ ] Email input
-  - [ ] Generate invite code
-- [ ] Member details view
-- [ ] Remove member with confirmation
-- [ ] Transfer manager functionality
-  - [ ] Confirm dialog
-  - [ ] Notification to target member
-  - [ ] Accept/reject UI
+- [x] Members list with avatars
+- [x] Add member modal
+  - [x] Email input
+  - [x] Generate invite code
+- [x] Member details view
+- [x] Remove member with confirmation
+- [x] Transfer manager functionality
+  - [x] Confirm dialog
+  - [x] Notification to target member (API ready)
+  - [x] Accept/reject UI (Settings page)
 
-## Phase 6: Monthly Cycle Management (Ready to Build)
+## Phase 6: Monthly Cycle Management ✅ (Completed)
 
-- [ ] Start new month dialog
-  - [ ] Confirm previous month closure
-  - [ ] Show settling summary
-- [ ] Month history view
-- [ ] Month details page
-  - [ ] Statement tab
-  - [ ] Transactions tab
-  - [ ] Member-wise breakdown
+- [x] Start new month dialog
+  - [x] Confirm previous month closure
+  - [x] Show settling summary
+- [x] Month history view
+- [x] Month details page
+  - [x] Statement tab (integrated in dashboard)
+  - [x] Transactions tab (linked to reports)
+  - [x] Member-wise breakdown (in members page)
 
 ## Phase 7: Chat & Messaging (Ready to Build)
 
@@ -103,33 +103,33 @@
   - [ ] manager_transfer_request
   - [ ] market_day_reminder
 
-## Phase 9: Reports & PDF (Ready to Build)
+## Phase 9: Reports & PDF ✅ (Completed)
 
-- [ ] Month statement view
-  - [ ] Member details table
-  - [ ] Meal breakdown
-  - [ ] Expense distribution
-  - [ ] Settlement calculation
-- [ ] PDF download functionality
-  - [ ] Format PDF properly
-  - [ ] Include mess details
-  - [ ] Month summary
-  - [ ] Member statements
-- [ ] Individual member statement
+- [x] Month statement view
+  - [x] Member details table
+  - [x] Meal breakdown
+  - [x] Expense distribution
+  - [x] Settlement calculation
+- [x] PDF download functionality
+  - [x] Format PDF properly
+  - [x] Include mess details
+  - [x] Month summary
+  - [x] Member statements
+- [x] Individual member statement
 
-## Phase 10: Settings (Ready to Build)
+## Phase 10: Settings ✅ (Completed)
 
-- [ ] Market day configuration
-  - [ ] Weekday selector
-  - [ ] Specific date option
-  - [ ] Preview next reminder
-- [ ] Profile settings
-  - [ ] Name, email, phone
-  - [ ] Avatar upload
-- [ ] Preferences
-  - [ ] Theme toggle
-  - [ ] Notification settings
-  - [ ] Keyboard shortcuts info
+- [x] Market day configuration
+  - [x] Weekday selector
+  - [x] Specific date option
+  - [x] Preview next reminder
+- [x] Profile settings
+  - [x] Name, email, phone
+  - [x] Avatar upload (UI ready)
+- [x] Preferences
+  - [x] Theme toggle (light/dark/system)
+  - [x] Notification settings
+  - [x] Keyboard shortcuts info
 
 ## Phase 11: Advanced Features (Optional)
 
