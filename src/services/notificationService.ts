@@ -6,7 +6,8 @@ export type NotificationType =
   | "deposit_added"
   | "member_joined"
   | "member_removed"
-  | "manager_transfer_request";
+  | "manager_transfer_request"
+  | "market_day_reminder";
 
 export interface Notification {
   id: string;

@@ -74,7 +74,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
     );
   };
 

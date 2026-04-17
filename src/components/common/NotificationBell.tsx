@@ -14,6 +14,7 @@ const NOTIFICATION_ICONS: Record<string, string> = {
   member_joined: "👋",
   member_removed: "👋",
   manager_transfer_request: "👑",
+  market_day_reminder: "🛒",
 };
 
 const NOTIFICATION_COLORS: Record<string, string> = {
@@ -23,6 +24,7 @@ const NOTIFICATION_COLORS: Record<string, string> = {
   member_joined: "bg-primary/10 text-primary",
   member_removed: "bg-warning/10 text-warning",
   manager_transfer_request: "bg-warning/10 text-warning",
+  market_day_reminder: "bg-info/10 text-info",
 };
 
 export function NotificationBell() {
@@ -137,6 +139,9 @@ export function NotificationBell() {
         break;
       case "manager_transfer_request":
         navigate("/settings");
+        break;
+      case "market_day_reminder":
+        navigate("/expenses");
         break;
       default:
         break;

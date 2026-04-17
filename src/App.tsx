@@ -17,6 +17,7 @@ import {
   MealsPage,
   MembersPage,
   MonthHistoryPage,
+  NotificationsPage,
   OnboardingPage,
   RegisterPage,
   ReportsPage,
@@ -132,6 +133,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
             </ProtectedRoute>
           }
         />

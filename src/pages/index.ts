@@ -8,6 +8,7 @@ export { LoginPage } from "./LoginPage";
 export { MealsPage } from "./MealsPage";
 export { MembersPage } from "./MembersPage";
 export { MonthHistoryPage } from "./MonthHistoryPage";
+export { NotificationsPage } from "./NotificationsPage";
 export { OnboardingPage } from "./OnboardingPage";
 export { RegisterPage } from "./RegisterPage";
 export { ReportsPage } from "./ReportsPage";
