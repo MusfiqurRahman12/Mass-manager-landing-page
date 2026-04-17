@@ -9,7 +9,6 @@ import {
   Modal,
   ModalBody,
   ModalFooter,
-  ModalHeader,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useRequireAuth } from "../hooks";
@@ -319,10 +318,12 @@ export function DashboardPage() {
       </div>
 
       {/* Start New Month Modal */}
-      {showStartMonthModal && (
-        <Modal onClose={() => setShowStartMonthModal(false)}>
-          <ModalHeader>Start New Month</ModalHeader>
-          <ModalBody>
+      <Modal
+        isOpen={showStartMonthModal}
+        onClose={() => setShowStartMonthModal(false)}
+        title="Start New Month"
+      >
+        <ModalBody>
             <div className="space-y-4">
               {activeMonth && (
                 <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg space-y-2">
@@ -378,19 +379,18 @@ export function DashboardPage() {
               </div>
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowStartMonthModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleStartNewMonth} isLoading={isStartingMonth}>
-              Start New Month
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+        <ModalFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowStartMonthModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleStartNewMonth} isLoading={isStartingMonth}>
+            Start New Month
+          </Button>
+        </ModalFooter>
+      </Modal>
     </MainLayout>
   );
 }

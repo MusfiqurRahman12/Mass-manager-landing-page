@@ -371,13 +371,13 @@ export function DepositsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Total Deposits
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-20" />
                     ) : (
                       formatCurrency(totalDeposits)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -393,13 +393,13 @@ export function DepositsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Total Expenses
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-20" />
                     ) : (
                       formatCurrency(mealCost?.total_cost || 0)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -422,7 +422,7 @@ export function DepositsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Current Balance
                   </p>
-                  <p
+                  <div
                     className={cn(
                       "text-2xl font-bold",
                       currentBalance >= 0 ? "text-green-600" : "text-red-600",
@@ -433,7 +433,7 @@ export function DepositsPage() {
                     ) : (
                       formatCurrency(currentBalance)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -449,13 +449,13 @@ export function DepositsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Total Members
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-16" />
                     ) : (
                       members.length
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>

@@ -363,13 +363,13 @@ export function MealsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Total Meals
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-16" />
                     ) : (
                       formatNumber(mealCost?.total_meal || 0)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -385,13 +385,13 @@ export function MealsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Meal Rate
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-16" />
                     ) : (
                       formatCurrency(mealCost?.meal_rate || 0)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -407,13 +407,13 @@ export function MealsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Total Cost
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-16" />
                     ) : (
                       formatCurrency(mealCost?.total_cost || 0)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -429,9 +429,9 @@ export function MealsPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Today's Meals
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? <Skeleton className="h-8 w-16" /> : todayMeals}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>

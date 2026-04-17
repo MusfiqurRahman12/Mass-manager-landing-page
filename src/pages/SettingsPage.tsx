@@ -9,7 +9,6 @@ import {
   Modal,
   ModalBody,
   ModalFooter,
-  ModalHeader,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
@@ -731,10 +730,12 @@ export function SettingsPage() {
       </div>
 
       {/* Transfer Manager Modal */}
-      {showTransferModal && (
-        <Modal onClose={() => setShowTransferModal(false)}>
-          <ModalHeader>Transfer Manager Role</ModalHeader>
-          <ModalBody>
+      <Modal
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        title="Transfer Manager Role"
+      >
+        <ModalBody>
             <div className="space-y-4">
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Select a member to transfer manager privileges to. This action
@@ -775,28 +776,27 @@ export function SettingsPage() {
                 </div>
               )}
             </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowTransferModal(false);
-                setSelectedMemberId("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleTransferManager}
-              isLoading={isTransferring}
-              disabled={!selectedMemberId || otherMembers.length === 0}
-              variant="destructive"
-            >
-              Transfer
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowTransferModal(false);
+              setSelectedMemberId("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleTransferManager}
+            isLoading={isTransferring}
+            disabled={!selectedMemberId || otherMembers.length === 0}
+            variant="destructive"
+          >
+            Transfer
+          </Button>
+        </ModalFooter>
+      </Modal>
     </MainLayout>
   );
 }

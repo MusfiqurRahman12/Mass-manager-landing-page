@@ -395,13 +395,13 @@ export function ExpensesPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Total Expenses
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-20" />
                     ) : (
                       formatCurrency(totalExpenses)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -417,13 +417,13 @@ export function ExpensesPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     This Month
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-20" />
                     ) : (
                       formatCurrency(thisMonthTotal)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -439,7 +439,7 @@ export function ExpensesPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Top Category
                   </p>
-                  <p className="text-lg font-bold text-neutral-900 dark:text-white truncate">
+                  <div className="text-lg font-bold text-neutral-900 dark:text-white truncate">
                     {isLoading ? (
                       <Skeleton className="h-8 w-20" />
                     ) : topCategory ? (
@@ -447,7 +447,7 @@ export function ExpensesPage() {
                     ) : (
                       "-"
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -463,13 +463,13 @@ export function ExpensesPage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Expense Count
                   </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-16" />
                     ) : (
                       formatNumber(expenses.length)
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardBody>
