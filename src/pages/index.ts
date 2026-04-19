@@ -7,6 +7,7 @@ export { HomePage } from "./HomePage";
 export { LoginPage } from "./LoginPage";
 export { MealsPage } from "./MealsPage";
 export { MembersPage } from "./MembersPage";
+export { MonthDetailsPage } from "./MonthDetailsPage";
 export { MonthHistoryPage } from "./MonthHistoryPage";
 export { NotificationsPage } from "./NotificationsPage";
 export { OnboardingPage } from "./OnboardingPage";

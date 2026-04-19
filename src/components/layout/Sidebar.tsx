@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Calendar,
   ChevronRight,
   DollarSign,
   Home,
@@ -53,6 +54,11 @@ const navItems: NavItem[] = [
     label: "Reports",
     icon: <BarChart3 className="w-5 h-5" />,
     path: "/reports",
+  },
+  {
+    label: "Month History",
+    icon: <Calendar className="w-5 h-5" />,
+    path: "/month-history",
   },
   {
     label: "Settings",

@@ -318,13 +318,96 @@ export function ReportsPage() {
               </Card>
 
               <Card className="text-center p-6">
-                <p className="text-neutral-500 text-sm mb-2">Total Deposits</p>
-                <h3 className="text-3xl font-bold mb-2">
-                  {formatCurrency(totalDeposits)}
+                <p className="text-neutral-500 text-sm mb-2">Closing Balance</p>
+                <h3
+                  className={`text-3xl font-bold mb-2 ${activeMonth?.closing_balance && activeMonth.closing_balance >= 0 ? "text-success" : "text-error"}`}
+                >
+                  {formatCurrency(activeMonth?.closing_balance || 0)}
                 </h3>
-                <Badge variant="success">Collected</Badge>
+                <Badge variant="success">Remaining</Badge>
               </Card>
             </div>
+
+            {/* Financial Overview */}
+            <Card className="overflow-hidden">
+              <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+                <h2 className="text-xl font-bold">Financial Overview</h2>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                      <span className="text-neutral-600 dark:text-neutral-400">
+                        Opening Balance
+                      </span>
+                      <span className="font-semibold">
+                        {formatCurrency(activeMonth?.opening_balance || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 bg-success/10 rounded-lg">
+                      <span className="text-success">Total Deposits</span>
+                      <span className="font-semibold text-success">
+                        +{formatCurrency(totalDeposits)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 bg-error/10 rounded-lg">
+                      <span className="text-error">Total Cost</span>
+                      <span className="font-semibold text-error">
+                        -{formatCurrency(totalMealCost)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 bg-primary/10 rounded-lg border-t-2 border-primary">
+                      <span className="font-semibold">Closing Balance</span>
+                      <span
+                        className={`font-bold text-lg ${(activeMonth?.closing_balance || 0) >= 0 ? "text-success" : "text-error"}`}
+                      >
+                        {formatCurrency(activeMonth?.closing_balance || 0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <h3 className="font-semibold mb-4">Expense Breakdown</h3>
+                    <div className="space-y-3">
+                      {expenseByCategory.length === 0 ? (
+                        <p className="text-neutral-500 text-center py-8">
+                          No expenses recorded this month
+                        </p>
+                      ) : (
+                        <>
+                          {expenseByCategory.map((item) => (
+                            <div key={item.category}>
+                              <div className="flex justify-between mb-1">
+                                <span className="capitalize flex items-center gap-2">
+                                  <span>{getCategoryIcon(item.category)}</span>
+                                  {item.category}
+                                </span>
+                                <span className="text-neutral-600 dark:text-neutral-400">
+                                  {formatCurrency(item.amount)} (
+                                  {item.percentage.toFixed(1)}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full transition-all"
+                                  style={{ width: `${item.percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                            <div className="flex justify-between font-semibold">
+                              <span>Total Expenses</span>
+                              <span>{formatCurrency(totalExpenses)}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

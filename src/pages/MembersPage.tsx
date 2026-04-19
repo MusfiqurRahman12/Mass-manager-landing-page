@@ -14,6 +14,7 @@ import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useRequireAuth } from "../hooks";
 import { type Member, memberService } from "../services/memberService";
+import { transferService } from "../services/transferService";
 import { isValidEmail } from "../utils";
 
 interface InviteCode {
@@ -150,18 +151,20 @@ export function MembersPage() {
 
     setIsTransferring(true);
     try {
-      await memberService.transferManager({
-        user_id: selectedMember.user_id,
+      // Use the new request workflow (Section 10.1)
+      const response = await transferService.requestTransfer({
+        target_member_id: selectedMember.user_id,
       });
-      toast.success("Manager role transferred successfully");
+      toast.success(response.message || "Transfer request sent successfully");
       setShowTransferModal(false);
       setShowDetailsModal(false);
       setSelectedMember(null);
-      loadMembers();
-      // Refresh user data to update role
-      window.location.reload();
     } catch (error) {
-      toast.error("Failed to transfer manager role");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to send transfer request",
+      );
     } finally {
       setIsTransferring(false);
     }
@@ -307,59 +310,57 @@ export function MembersPage() {
         title="Add New Member"
       >
         <ModalBody>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Email Address
-                </label>
-                <Input
-                  type="email"
-                  value={newMemberEmail}
-                  onChange={(e) => {
-                    setNewMemberEmail(e.target.value);
-                    setEmailError("");
-                  }}
-                  placeholder="member@example.com"
-                  error={emailError}
-                />
-                <p className="text-xs text-neutral-500 mt-1">
-                  Enter the email of an existing user to invite them to your
-                  mess
-                </p>
-              </div>
-
-              <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                <label className="block text-sm font-medium mb-2">
-                  Or Generate Invite Code
-                </label>
-                {inviteCode ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg font-mono text-lg text-center">
-                        {inviteCode.code}
-                      </code>
-                      <Button variant="outline" onClick={copyInviteCode}>
-                        Copy
-                      </Button>
-                    </div>
-                    <p className="text-xs text-neutral-500">
-                      Expires at{" "}
-                      {new Date(inviteCode.expiresAt).toLocaleString()}
-                    </p>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={generateInviteCode}
-                    isLoading={isGeneratingCode}
-                    className="w-full"
-                  >
-                    Generate Invite Code
-                  </Button>
-                )}
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Email Address
+              </label>
+              <Input
+                type="email"
+                value={newMemberEmail}
+                onChange={(e) => {
+                  setNewMemberEmail(e.target.value);
+                  setEmailError("");
+                }}
+                placeholder="member@example.com"
+                error={emailError}
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                Enter the email of an existing user to invite them to your mess
+              </p>
             </div>
-          </ModalBody>
+
+            <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+              <label className="block text-sm font-medium mb-2">
+                Or Generate Invite Code
+              </label>
+              {inviteCode ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg font-mono text-lg text-center">
+                      {inviteCode.code}
+                    </code>
+                    <Button variant="outline" onClick={copyInviteCode}>
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    Expires at {new Date(inviteCode.expiresAt).toLocaleString()}
+                  </p>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={generateInviteCode}
+                  isLoading={isGeneratingCode}
+                  className="w-full"
+                >
+                  Generate Invite Code
+                </Button>
+              )}
+            </div>
+          </div>
+        </ModalBody>
         <ModalFooter>
           <Button variant="outline" onClick={() => setShowAddModal(false)}>
             Cancel
@@ -415,7 +416,9 @@ export function MembersPage() {
                 </div>
                 <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                   <span className="text-neutral-500">Status</span>
-                  <span>{selectedMember.is_active ? "Active" : "Inactive"}</span>
+                  <span>
+                    {selectedMember.is_active ? "Active" : "Inactive"}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                   <span className="text-neutral-500">User ID</span>
@@ -460,24 +463,26 @@ export function MembersPage() {
         )}
       </Modal>
 
-      {/* Transfer Manager Confirmation */}
+      {/* Transfer Manager Request Confirmation */}
       <Modal
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
-        title="Transfer Manager Role"
+        title="Request Manager Transfer"
       >
         {selectedMember && (
           <>
             <ModalBody>
               <div className="space-y-4">
-                <div className="p-4 bg-warning/10 rounded-lg">
-                  <p className="text-sm text-warning">
-                    <strong>Warning:</strong> This action cannot be undone. You
-                    will lose manager privileges and become a regular member.
+                <div className="p-4 bg-info/10 rounded-lg">
+                  <p className="text-sm text-info">
+                    <strong>Note:</strong> A transfer request will be sent to{" "}
+                    <strong>{selectedMember.full_name}</strong>. They will need
+                    to accept the request before the transfer is complete. The
+                    request expires in 7 days.
                   </p>
                 </div>
-                <p>
-                  Are you sure you want to transfer manager role to{" "}
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Are you sure you want to request a transfer of manager role to{" "}
                   <strong>{selectedMember.full_name}</strong>?
                 </p>
               </div>
@@ -490,11 +495,10 @@ export function MembersPage() {
                 Cancel
               </Button>
               <Button
-                variant="destructive"
                 onClick={handleTransferManager}
                 isLoading={isTransferring}
               >
-                Transfer Role
+                Send Request
               </Button>
             </ModalFooter>
           </>

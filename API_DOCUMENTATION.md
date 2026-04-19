@@ -865,7 +865,7 @@ Initiate manager role transfer process.
 **Request Schema:**
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `target_member_id` | UUID | Yes | Member to receive
+| `to_member_id` | UUID | Yes | Member to receive
 manager role |
 
 **Response Schema (200 OK):**

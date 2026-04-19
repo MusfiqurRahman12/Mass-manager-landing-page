@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize from localStorage
+  // Initialize from localStorage and refresh from server
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -52,7 +52,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("user");
       }
     }
-    setIsLoading(false);
+
+    // Refresh user data from server to get latest role
+    const refreshUser = async () => {
+      if (authService.isAuthenticated()) {
+        try {
+          const userInfo = await authService.getCurrentUserInfo();
+          setUser(userInfo);
+        } catch (error) {
+          console.error("Failed to refresh user data:", error);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    refreshUser();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {

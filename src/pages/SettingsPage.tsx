@@ -11,6 +11,7 @@ import {
   ModalFooter,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
+import { PendingTransferCard } from "../components/settings/PendingTransferCard";
 import { useAuth } from "../context";
 import { useRequireAuth } from "../hooks";
 import { type Member, memberService } from "../services/memberService";
@@ -19,6 +20,10 @@ import {
   messService,
   type UpdateMessPayload,
 } from "../services/messService";
+import {
+  type TransferRequest,
+  transferService,
+} from "../services/transferService";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -48,6 +53,9 @@ export function SettingsPage() {
   const [isTransferring, setIsTransferring] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [pendingTransfers, setPendingTransfers] = useState<TransferRequest[]>(
+    [],
+  );
 
   // Profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -105,11 +113,15 @@ export function SettingsPage() {
     });
   };
 
-  useEffect(() => {
-    if (isReady) {
-      loadData();
+  const loadPendingTransfers = async () => {
+    try {
+      const transfers = await transferService.getPendingTransfers();
+      setPendingTransfers(transfers);
+    } catch {
+      // Silently fail - user might not have any pending transfers
+      setPendingTransfers([]);
     }
-  }, [isReady]);
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -150,12 +162,22 @@ export function SettingsPage() {
       if (savedNotifications) {
         setNotifications(JSON.parse(savedNotifications));
       }
-    } catch (error) {
+
+      // Load pending transfer requests
+      await loadPendingTransfers();
+    } catch {
       toast.error("Failed to load settings");
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isReady) {
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady]);
 
   const handleSave = async () => {
     if (!formData.name?.trim()) {
@@ -168,7 +190,7 @@ export function SettingsPage() {
       const updated = await messService.updateMess(formData);
       setMess(updated);
       toast.success("Settings saved successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save settings");
     } finally {
       setIsSaving(false);
@@ -215,13 +237,19 @@ export function SettingsPage() {
 
     setIsTransferring(true);
     try {
-      await memberService.transferManager({ user_id: selectedMemberId });
-      toast.success("Manager role transferred successfully");
+      // Use the new request workflow (Section 10.1)
+      const response = await transferService.requestTransfer({
+        to_member_id: selectedMemberId,
+      });
+      toast.success(response.message || "Transfer request sent successfully");
       setShowTransferModal(false);
       setSelectedMemberId("");
-      window.location.reload();
     } catch (error) {
-      toast.error("Failed to transfer manager role");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to send transfer request",
+      );
     } finally {
       setIsTransferring(false);
     }
@@ -241,10 +269,8 @@ export function SettingsPage() {
       toast.success("Mess deleted successfully");
       logout();
       window.location.href = "/";
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete mess",
-      );
+    } catch {
+      toast.error("Failed to delete mess");
     }
   };
 
@@ -305,6 +331,14 @@ export function SettingsPage() {
             Manage your mess settings and preferences
           </p>
         </div>
+
+        {/* Pending Transfer Requests - Show if user has pending transfers */}
+        {pendingTransfers.length > 0 && (
+          <PendingTransferCard
+            transfers={pendingTransfers}
+            onUpdate={loadPendingTransfers}
+          />
+        )}
 
         {/* Profile Section */}
         <Card className="space-y-6">
@@ -733,49 +767,50 @@ export function SettingsPage() {
       <Modal
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
-        title="Transfer Manager Role"
+        title="Request Manager Transfer"
       >
         <ModalBody>
-            <div className="space-y-4">
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Select a member to transfer manager privileges to. This action
-                cannot be undone.
+          <div className="space-y-4">
+            <div className="p-4 bg-info/10 rounded-lg">
+              <p className="text-sm text-info">
+                <strong>Note:</strong> A transfer request will be sent to the
+                selected member. They will need to accept the request before the
+                transfer is complete. The request expires in 7 days.
               </p>
-
-              {otherMembers.length === 0 ? (
-                <p className="text-sm text-neutral-500">
-                  No other members in the mess to transfer to.
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {otherMembers.map((member) => (
-                    <label
-                      key={member.user_id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedMemberId === member.user_id
-                          ? "border-primary bg-primary/5"
-                          : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="transferMember"
-                        value={member.user_id}
-                        checked={selectedMemberId === member.user_id}
-                        onChange={(e) => setSelectedMemberId(e.target.value)}
-                        className="w-4 h-4 text-primary"
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium">{member.full_name}</p>
-                        <p className="text-sm text-neutral-500">
-                          {member.email}
-                        </p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
             </div>
+
+            {otherMembers.length === 0 ? (
+              <p className="text-sm text-neutral-500">
+                No other members in the mess to transfer to.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {otherMembers.map((member) => (
+                  <label
+                    key={member.user_id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedMemberId === member.user_id
+                        ? "border-primary bg-primary/5"
+                        : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="transferMember"
+                      value={member.user_id}
+                      checked={selectedMemberId === member.user_id}
+                      onChange={(e) => setSelectedMemberId(e.target.value)}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">{member.full_name}</p>
+                      <p className="text-sm text-neutral-500">{member.email}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </ModalBody>
         <ModalFooter>
           <Button
@@ -791,9 +826,8 @@ export function SettingsPage() {
             onClick={handleTransferManager}
             isLoading={isTransferring}
             disabled={!selectedMemberId || otherMembers.length === 0}
-            variant="destructive"
           >
-            Transfer
+            Send Request
           </Button>
         </ModalFooter>
       </Modal>
