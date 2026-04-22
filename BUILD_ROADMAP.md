@@ -30,6 +30,7 @@
 
 ## Phase 3: Expense Management ✅ (Completed)
 
+### 3.1: Legacy Generic Expenses ✅
 - [x] Add expense form
   - [x] Category selector (electricity, groceries, etc.)
   - [x] Amount input
@@ -40,6 +41,36 @@
   - [x] Sorting by date/amount
   - [x] Edit/delete actions
 - [x] Expense summary dashboard
+
+### 3.2: Enhanced Expense Module ✅ (New - 2026-04-23)
+- [x] Meal Expenses Module
+  - [x] Individual meal expense tracking
+  - [x] Automatic meal rate calculation
+  - [x] Meal expense list with pagination
+  - [x] Add/Edit/Delete meal expenses
+  - [x] Integration with meal rate system
+- [x] Home Rent Module
+  - [x] Equal division method
+  - [x] Percentage-based division
+  - [x] Manual amount division
+  - [x] Preview before saving
+  - [x] Member-wise breakdown display
+- [x] Utility Expenses Module
+  - [x] Electricity, gas, water, internet support
+  - [x] Equal division among members
+  - [x] Type filtering
+  - [x] Per-member share calculation
+- [x] Expense Summary Dashboard
+  - [x] Member-wise breakdown table
+  - [x] Total expenses summary
+  - [x] Meal rate information display
+  - [x] Home rent history
+  - [x] Utility expenses history
+- [x] API Service Layer
+  - [x] expenseApi.ts with all endpoints
+  - [x] TypeScript types for all entities
+  - [x] Preview endpoint integration
+  - [x] Summary endpoints integration
 
 ## Phase 4: Deposits & Balance ✅ (Completed)
 

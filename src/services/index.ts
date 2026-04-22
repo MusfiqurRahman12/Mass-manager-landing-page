@@ -3,6 +3,7 @@ export { default as apiClient } from "./apiClient";
 export * from "./authService";
 export * from "./chatService";
 export * from "./depositService";
+export * from "./expenseApi";
 export * from "./expenseService";
 export * from "./mealService";
 export * from "./memberService";

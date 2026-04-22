@@ -11,9 +11,12 @@ import {
   ChatPage,
   DashboardPage,
   DepositsPage,
+  ExpenseSummaryPage,
   ExpensesPage,
   HomePage,
+  HomeRentExpensePage,
   LoginPage,
+  MealExpensesPage,
   MealsPage,
   MembersPage,
   MonthDetailsPage,
@@ -23,6 +26,7 @@ import {
   RegisterPage,
   ReportsPage,
   SettingsPage,
+  UtilityExpensesPage,
 } from "./pages";
 
 // Onboarding route wrapper - only accessible if user doesn't have a mess
@@ -81,11 +85,45 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* Legacy Expenses Page - kept for backward compatibility */}
         <Route
           path="/expenses"
           element={
             <ProtectedRoute>
               <ExpensesPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* New Expense Module Routes */}
+        <Route
+          path="/expense-summary"
+          element={
+            <ProtectedRoute>
+              <ExpenseSummaryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/meal-expenses"
+          element={
+            <ProtectedRoute>
+              <MealExpensesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home-rent"
+          element={
+            <ProtectedRoute requireManager>
+              <HomeRentExpensePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/utility-expenses"
+          element={
+            <ProtectedRoute requireManager>
+              <UtilityExpensesPage />
             </ProtectedRoute>
           }
         />
