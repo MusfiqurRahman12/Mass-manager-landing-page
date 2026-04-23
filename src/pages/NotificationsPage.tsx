@@ -414,7 +414,10 @@ export function NotificationsPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && notificationToDelete && (
-        <Modal onClose={() => setShowDeleteModal(false)}>
+        <Modal 
+          isOpen={showDeleteModal} 
+          onClose={() => setShowDeleteModal(false)}
+        >
           <ModalHeader>Delete Notification</ModalHeader>
           <ModalBody>
             <p className="text-neutral-600 dark:text-neutral-400">
@@ -433,7 +436,7 @@ export function NotificationsPage() {
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant="danger"
               onClick={handleDelete}
               isLoading={isSubmitting}
             >

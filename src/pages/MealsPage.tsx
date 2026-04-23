@@ -325,11 +325,6 @@ export function MealsPage() {
     return meals.filter((m) => m.meal_date === today).length;
   }, [meals]);
 
-  const projectedCost = useMemo(() => {
-    if (!mealCost) return 0;
-    return mealCost.total_meal * mealCost.meal_rate;
-  }, [mealCost]);
-
   return (
     <MainLayout>
       <div className="space-y-6">

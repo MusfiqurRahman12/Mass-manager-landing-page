@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useRef,
-} from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import type { Message, Notification } from "../services";
 
@@ -21,9 +15,9 @@ const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
-  const [messages, setMessages] = React.useState<Message[]>([]);
-  const [notifications, setNotifications] = React.useState<Notification[]>([]);
-  const [isConnected, setIsConnected] = React.useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     const wsUrl = import.meta.env.VITE_WS_URL || "http://localhost:3000";
@@ -43,12 +37,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     socketRef.current.on("connect", () => {
       setIsConnected(true);
-      console.log("Socket connected");
     });
 
     socketRef.current.on("disconnect", () => {
       setIsConnected(false);
-      console.log("Socket disconnected");
     });
 
     socketRef.current.on("message:new", (message: Message) => {

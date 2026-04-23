@@ -1,14 +1,15 @@
-import { Bell, LogOut, Menu } from "lucide-react";
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { LogOut, Menu } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth, useTheme } from "../../context";
-import { Button } from "../common";
+import { Button, NotificationBell } from "../common";
 
-export function Navbar() {
+interface NavbarProps {
+  onMenuClick?: () => void;
+}
+
+export function Navbar({ onMenuClick }: NavbarProps) {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const location = useLocation();
-  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
   return (
     <nav className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-40 shadow-sm">
@@ -60,10 +61,7 @@ export function Navbar() {
                 {isDark ? "☀️" : "🌙"}
               </button>
 
-              <button className="relative p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors duration-200">
-                <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full animate-pulse"></span>
-              </button>
+              <NotificationBell />
 
               <button
                 onClick={logout}
@@ -92,39 +90,13 @@ export function Navbar() {
 
           {/* Mobile Menu Toggle */}
           <button
-            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            onClick={onMenuClick}
             className="md:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
         </div>
       </div>
-
-      {/* Mobile Navigation */}
-      {isMobileOpen && user && (
-        <div className="md:hidden px-4 py-4 border-t border-neutral-200 dark:border-neutral-700 space-y-2">
-          <Link
-            to="/dashboard"
-            className="block py-2 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/chat"
-            className="block py-2 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
-          >
-            Chat
-          </Link>
-          {user.role === "manager" && (
-            <Link
-              to="/members"
-              className="block py-2 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
-            >
-              Members
-            </Link>
-          )}
-        </div>
-      )}
     </nav>
   );
 }

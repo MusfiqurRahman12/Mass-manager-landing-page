@@ -8,7 +8,7 @@ import {
   Trash2,
   Utensils,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Button,

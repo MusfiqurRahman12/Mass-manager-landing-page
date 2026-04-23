@@ -128,7 +128,7 @@ export function Footer() {
 
         <div className="border-t border-neutral-200 dark:border-neutral-700 pt-8 text-center">
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            &copy; 2024 MessSync. All rights reserved. | Built with passion for
+            &copy; {new Date().getFullYear()} MessSync. All rights reserved. | Built with passion for
             shared living.
           </p>
         </div>

@@ -155,10 +155,6 @@ export function DepositsPage() {
     return deposits.reduce((sum, d) => sum + d.amount, 0);
   }, [deposits]);
 
-  const totalMealCost = useMemo(() => {
-    if (!mealCost) return 0;
-    return mealCost.total_meal * mealCost.meal_rate;
-  }, [mealCost]);
 
   const currentBalance = useMemo(() => {
     return totalDeposits - (mealCost?.total_cost || 0);

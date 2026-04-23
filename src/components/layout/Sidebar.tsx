@@ -25,17 +25,7 @@ interface NavItem {
   managerOnly?: boolean;
 }
 
-interface NavGroup {
-  label: string;
-  icon: React.ReactNode;
-  managerOnly?: boolean;
-  children: {
-    label: string;
-    icon: React.ReactNode;
-    path: string;
-    managerOnly?: boolean;
-  }[];
-}
+
 
 const navItems: NavItem[] = [
   {
@@ -145,13 +135,23 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
   );
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-20 bottom-0 w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 transition-all duration-300 z-30 shadow-sm",
-        "hidden md:flex flex-col",
+    <>
+      {/* Mobile Backdrop */}
+      {open && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden"
+          onClick={onClose}
+        />
       )}
-    >
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed left-0 top-16 md:top-20 bottom-0 w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 transition-transform duration-300 z-30 shadow-sm flex flex-col",
+          open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {/* Regular Nav Items */}
         {filteredItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -222,5 +222,6 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
         </div>
       </nav>
     </aside>
+    </>
   );
 }

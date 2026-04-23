@@ -29,6 +29,8 @@ apiClient.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Token expired or invalid - clear and redirect to login
+      // Note: window.location.href is intentional here because this interceptor
+      // runs outside the React component tree where useNavigate() is unavailable.
       localStorage.removeItem("token");
       localStorage.removeItem("tokenType");
       localStorage.removeItem("user");

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button, Card, Input } from "../components/common";
 import { AuthLayout } from "../components/layout";
@@ -13,7 +13,7 @@ interface LoginFormValues {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login } = useAuth();
 
   const validate = (values: LoginFormValues) => {
     const errors: Record<string, string> = {};
@@ -81,15 +81,16 @@ export function LoginPage() {
         <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
           <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
             Don't have an account?{" "}
-            <a
-              href="/register"
+            <Link
+              to="/register"
               className="text-primary font-semibold hover:underline transition-colors"
             >
               Create one
-            </a>
+            </Link>
           </p>
         </div>
       </Card>
     </AuthLayout>
   );
 }
+

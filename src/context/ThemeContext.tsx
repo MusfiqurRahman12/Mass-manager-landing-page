@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -12,11 +12,11 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     return (localStorage.getItem("theme") as Theme) || "system";
   });
 
-  const isDark = React.useMemo(() => {
+  const isDark = useMemo(() => {
     if (theme === "system") {
       return typeof window !== "undefined"
         ? window.matchMedia("(prefers-color-scheme: dark)").matches

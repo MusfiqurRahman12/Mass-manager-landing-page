@@ -36,8 +36,8 @@ export const memberService = {
   },
 
   // Transfer manager role to another member
-  transferManager: async (payload: TransferManagerPayload): Promise<any> => {
-    const { data } = await apiClient.put<any>(
+  transferManager: async (payload: TransferManagerPayload): Promise<{ message: string }> => {
+    const { data } = await apiClient.put<{ message: string }>(
       "/members/transfer-manager",
       payload,
     );

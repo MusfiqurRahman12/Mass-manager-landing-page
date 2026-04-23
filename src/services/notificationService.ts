@@ -59,8 +59,8 @@ export const notificationService = {
   },
 
   // Mark all notifications as read
-  markAllAsRead: async (): Promise<any> => {
-    const { data } = await apiClient.post<any>("/notifications/mark-all-read");
+  markAllAsRead: async (): Promise<{ message: string }> => {
+    const { data } = await apiClient.post<{ message: string }>("/notifications/mark-all-read");
     return data;
   },
 

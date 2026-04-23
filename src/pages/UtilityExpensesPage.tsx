@@ -20,7 +20,6 @@ import {
   DatePicker,
   Input,
   Modal,
-  ModalBody,
   ModalFooter,
   Select,
   Skeleton,

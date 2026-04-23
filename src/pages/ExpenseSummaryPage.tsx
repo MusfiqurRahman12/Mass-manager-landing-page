@@ -4,11 +4,10 @@ import {
   DollarSign,
   Home,
   Receipt,
-  TrendingUp,
   Utensils,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Card,
@@ -17,13 +16,9 @@ import {
   Skeleton,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
-import { useAuth } from "../context";
 import type {
   ExpenseSummaryMembersResponse,
   ExpenseSummaryTotalsResponse,
-  MemberSummary,
-  HomeRentExpense,
-  UtilityExpense,
   MealExpensesResponse,
 } from "../services";
 import { expenseApi } from "../services";
@@ -31,7 +26,6 @@ import { formatCurrency } from "../utils/format.utils";
 import { cn } from "../utils";
 
 export function ExpenseSummaryPage() {
-  const { user } = useAuth();
 
   // State
   const [membersSummary, setMembersSummary] = useState<ExpenseSummaryMembersResponse | null>(null);
@@ -63,14 +57,6 @@ export function ExpenseSummaryPage() {
     fetchData();
   }, []);
 
-  // Calculate per-member meal cost
-  const getMemberMealCost = (member: MemberSummary) => {
-    if (!mealExpenses) return 0;
-    // Meal cost is already factored into meal_rate
-    // Each member's meal cost = their meals * meal_rate
-    // But we don't have individual meal counts here, so we show the rate
-    return 0; // Will be calculated based on individual meals
-  };
 
   return (
     <MainLayout>
@@ -264,9 +250,7 @@ export function ExpenseSummaryPage() {
                   </thead>
                   <tbody>
                     {membersSummary.member_summaries.map((member) => {
-                      const mealCost = member.total_share > 0
-                        ? (mealExpenses?.meal_rate || 0)
-                        : 0;
+
                       const totalWithMeals = member.total_share;
 
                       return (

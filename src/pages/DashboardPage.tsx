@@ -11,21 +11,15 @@ import {
   ModalFooter,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
-import { useRequireAuth } from "../hooks";
+import { useAuth } from "../context";
+import { formatCurrency } from "../utils";
 import { type MealCost, mealService } from "../services/mealService";
 import { type Member, memberService } from "../services/memberService";
 import { type Month, monthService } from "../services/monthService";
 
-interface MonthlySummary {
-  totalMeals: number;
-  totalExpenses: number;
-  yourDeposit: number;
-  balanceDue: number;
-  mealRate: number;
-}
 
 export function DashboardPage() {
-  const { isReady, user } = useRequireAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeMonth, setActiveMonth] = useState<Month | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -39,11 +33,11 @@ export function DashboardPage() {
   const [nextMonthDate, setNextMonthDate] = useState("");
 
   useEffect(() => {
-    if (isReady && user) {
+    if (user) {
       setIsManager(user.role === "manager");
       loadDashboardData();
     }
-  }, [isReady, user]);
+  }, [user]);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
@@ -101,15 +95,8 @@ export function DashboardPage() {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
-  if (!isReady || isLoading) {
+  if (isLoading) {
     return (
       <MainLayout>
         <LoadingSpinner fullScreen message="Loading dashboard..." />
@@ -312,7 +299,7 @@ export function DashboardPage() {
                   {action.label}
                 </button>
               ))}
-            </div>{" "}
+            </div>
           </Card>
         </div>
       </div>

@@ -115,10 +115,10 @@ export function MonthDetailsPage() {
     .sort((a, b) => b.amount - a.amount);
 
   const handleDownloadPDF = async () => {
-    if (!month) return;
+    if (!month || !monthId) return;
     setIsGeneratingPDF(true);
     try {
-      await pdfService.downloadMonthStatement(month.id);
+      await pdfService.downloadMonthPDF(monthId);
       toast.success("PDF downloaded successfully");
     } catch (error) {
       toast.error("Failed to download PDF");

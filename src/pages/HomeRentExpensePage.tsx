@@ -9,7 +9,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Button,
@@ -29,7 +29,6 @@ import { useAuth } from "../context";
 import { useForm } from "../hooks/useForm";
 import type {
   HomeRentExpense,
-  MemberShare,
   MemberShareInput,
   ShareType,
   AddHomeRentPayload,
@@ -45,11 +44,7 @@ interface HomeRentFormValues {
   description: string;
 }
 
-const SHARE_TYPE_OPTIONS = [
-  { value: "equal", label: "Equal Division", icon: Users },
-  { value: "percentage", label: "Percentage Based", icon: Percent },
-  { value: "manual", label: "Manual Amounts", icon: Calculator },
-];
+
 
 const ITEMS_PER_PAGE = 10;
 
@@ -185,8 +180,7 @@ export function HomeRentExpensePage() {
 
   // Preview handler
   const handlePreview = async () => {
-    if (!rentForm.isValid) {
-      rentForm.touchAll();
+    if (!rentForm.validateForm()) {
       return;
     }
 
@@ -620,7 +614,6 @@ export function HomeRentExpensePage() {
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
         title="Preview Rent Division"
-        size="lg"
       >
         <ModalBody>
           {previewData && (

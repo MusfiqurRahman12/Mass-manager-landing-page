@@ -65,14 +65,14 @@ export const authService = {
   },
 
   // Create new mess
-  createMess: async (payload: CreateMessPayload): Promise<any> => {
-    const { data } = await apiClient.post<any>("/auth/create-mess", payload);
+  createMess: async (payload: CreateMessPayload): Promise<{ id: string; name: string; message: string }> => {
+    const { data } = await apiClient.post<{ id: string; name: string; message: string }>("/auth/create-mess", payload);
     return data;
   },
 
   // Join existing mess
-  joinMess: async (messId: string): Promise<any> => {
-    const { data } = await apiClient.post<any>(`/auth/join-mess/${messId}`);
+  joinMess: async (messId: string): Promise<{ message: string }> => {
+    const { data } = await apiClient.post<{ message: string }>(`/auth/join-mess/${messId}`);
     return data;
   },
 

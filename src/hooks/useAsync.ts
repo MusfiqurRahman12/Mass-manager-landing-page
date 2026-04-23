@@ -1,8 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface UseAsyncOptions {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: Error) => void;
   showToast?: boolean;
 }
@@ -21,6 +21,10 @@ export function useAsync<T, E = Error>(
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<E | null>(null);
 
+  // Use ref for options to avoid infinite re-render loop
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
   const execute = useCallback(async () => {
     setStatus("pending");
     setData(null);
@@ -30,9 +34,9 @@ export function useAsync<T, E = Error>(
       const response = await asyncFunction();
       setData(response);
       setStatus("success");
-      options?.onSuccess?.(response);
+      optionsRef.current?.onSuccess?.(response);
 
-      if (options?.showToast) {
+      if (optionsRef.current?.showToast) {
         toast.success("Operation successful");
       }
 
@@ -41,9 +45,9 @@ export function useAsync<T, E = Error>(
       const error = err as E;
       setError(error);
       setStatus("error");
-      options?.onError?.(error as any);
+      optionsRef.current?.onError?.(error as Error);
 
-      if (options?.showToast) {
+      if (optionsRef.current?.showToast) {
         toast.error(
           error instanceof Error ? error.message : "An error occurred",
         );
@@ -51,10 +55,10 @@ export function useAsync<T, E = Error>(
 
       throw err;
     }
-  }, [asyncFunction, options]);
+  }, [asyncFunction]);
 
   // Auto-execute on mount if immediate is true
-  React.useEffect(() => {
+  useEffect(() => {
     if (immediate) {
       execute();
     }
@@ -62,6 +66,3 @@ export function useAsync<T, E = Error>(
 
   return { status, data, error, execute, isLoading: status === "pending" };
 }
-
-// Import React at top
-import React from "react";

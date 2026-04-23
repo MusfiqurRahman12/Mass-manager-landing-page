@@ -1,75 +1,56 @@
-# React + TypeScript + Vite
+# MessSync (Mess Manager)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive React application for managing shared living spaces (messes). Track meals, expenses, rent, deposits, and members all in one place.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Authentication & Authorization**: Secure login, registration, and manager/member role separation.
+- **Dashboard Overview**: Financial overview, active month summary, and recent activity at a glance.
+- **Meal Management**: Track daily meals for all members.
+- **Expense Tracking**: Categorized expenses including groceries, utilities, and home rent.
+- **Member Management**: Add/remove members, view balances, and transfer manager roles.
+- **Monthly Reports**: Generate comprehensive monthly settlements and PDF statements.
+- **Real-time Notifications**: WebSockets-enabled notifications for all mess activities.
+- **Responsive Design**: fully functional on desktop and mobile.
+- **Dark Mode**: Built-in support for dark theme.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+- React 19 + TypeScript
+- Vite
+- TailwindCSS
+- React Router 7
+- Axios
+- Socket.IO Client
+- Lucide React (Icons)
+- Sonner (Toast Notifications)
 
-Note: This will impact Vite dev & build performances.
+## Getting Started
 
-## Expanding the ESLint configuration
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables:
+   Create a `.env` file in the root directory:
+   ```env
+   VITE_API_URL=http://localhost:5000/api
+   VITE_WS_URL=http://localhost:5000
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Building for Production
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Contributing
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. Create a feature branch
+2. Commit your changes
+3. Open a Pull Request

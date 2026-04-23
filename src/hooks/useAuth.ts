@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context";
 
 interface UseCheckAuthReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
-  error: Error | null;
 }
 
 /**
@@ -12,13 +12,8 @@ interface UseCheckAuthReturn {
  */
 export function useCheckAuth(): UseCheckAuthReturn {
   const { isAuthenticated, isLoading } = useAuth();
-  const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    // Additional auth verification can be done here if needed
-  }, [isAuthenticated]);
-
-  return { isLoading, isAuthenticated, error };
+  return { isLoading, isAuthenticated };
 }
 
 /**
@@ -26,17 +21,18 @@ export function useCheckAuth(): UseCheckAuthReturn {
  */
 export function useRequireAuth() {
   const { isLoading, user } = useAuth();
+  const navigate = useNavigate();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        window.location.href = "/login";
+        navigate("/login", { replace: true });
       } else {
         setIsReady(true);
       }
     }
-  }, [isLoading, user]);
+  }, [isLoading, user, navigate]);
 
   return { isReady, user };
 }
@@ -46,17 +42,18 @@ export function useRequireAuth() {
  */
 export function useRequireManager() {
   const { isLoading, user } = useAuth();
+  const navigate = useNavigate();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!isLoading) {
       if (!user || user.role !== "manager") {
-        window.location.href = "/dashboard";
+        navigate("/dashboard", { replace: true });
       } else {
         setIsReady(true);
       }
     }
-  }, [isLoading, user]);
+  }, [isLoading, user, navigate]);
 
   return { isReady };
 }

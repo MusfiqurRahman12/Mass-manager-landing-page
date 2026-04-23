@@ -11,7 +11,7 @@ import {
   ModalFooter,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
-import { useAuth } from "../context";
+
 import { useRequireAuth } from "../hooks";
 import { type Member, memberService } from "../services/memberService";
 import { transferService } from "../services/transferService";
@@ -24,7 +24,6 @@ interface InviteCode {
 
 export function MembersPage() {
   const { isReady, user } = useRequireAuth();
-  const { user: authUser } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isManager, setIsManager] = useState(false);
@@ -439,7 +438,7 @@ export function MembersPage() {
                     Make Manager
                   </Button>
                   <Button
-                    variant="destructive"
+                    variant="danger"
                     onClick={() => {
                       setShowDetailsModal(false);
                       confirmRemoveMember(selectedMember);
@@ -531,7 +530,7 @@ export function MembersPage() {
                 Cancel
               </Button>
               <Button
-                variant="destructive"
+                variant="danger"
                 onClick={handleRemoveMember}
                 isLoading={isRemoving}
               >

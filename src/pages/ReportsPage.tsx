@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Badge,
@@ -11,7 +12,7 @@ import {
   ModalHeader,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
-import { useAuth } from "../context";
+
 import { useRequireAuth } from "../hooks";
 import { depositService, type Deposit } from "../services/depositService";
 import { expenseService, type Expense } from "../services/expenseService";
@@ -35,8 +36,8 @@ interface ExpenseByCategory {
 }
 
 export function ReportsPage() {
-  const { isReady, user } = useRequireAuth();
-  const { user: authUser } = useAuth();
+  const { isReady } = useRequireAuth();
+  const navigate = useNavigate();
   const [activeMonth, setActiveMonth] = useState<Month | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -287,7 +288,7 @@ export function ReportsPage() {
             <p className="text-neutral-500 mb-4">
               No active month found. Please start a new month.
             </p>
-            <Button onClick={() => (window.location.href = "/dashboard")}>
+            <Button onClick={() => navigate("/dashboard")}>
               Go to Dashboard
             </Button>
           </Card>
@@ -677,7 +678,7 @@ export function ReportsPage() {
 
       {/* Member Detail Modal */}
       {showMemberModal && selectedMember && (
-        <Modal onClose={() => setShowMemberModal(false)}>
+        <Modal isOpen={showMemberModal} onClose={() => setShowMemberModal(false)}>
           <ModalHeader>
             Member Statement - {selectedMember.member.full_name}
           </ModalHeader>

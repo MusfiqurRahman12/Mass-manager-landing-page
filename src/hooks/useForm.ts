@@ -42,8 +42,8 @@ export function useForm<T>({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsSubmitting(true);
 
     if (validate) {
@@ -84,5 +84,15 @@ export function useForm<T>({
     handleSubmit,
     resetForm,
     setValues,
+    validateForm: () => {
+      if (validate) {
+        const newErrors = validate(values);
+        setErrors(newErrors);
+        const allTouched = Object.keys(values as object).reduce((acc, key) => ({ ...acc, [key]: true }), {});
+        setTouched(allTouched);
+        return Object.keys(newErrors).length === 0;
+      }
+      return true;
+    },
   };
 }

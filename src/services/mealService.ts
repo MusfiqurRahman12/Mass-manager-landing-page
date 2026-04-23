@@ -34,6 +34,7 @@ export const mealService = {
   getMeals: async (params?: {
     member_id?: string;
     meal_date?: string;
+    month_id?: string;
   }): Promise<Meal[]> => {
     const { data } = await apiClient.get<Meal[]>("/meals", { params });
     return data;

@@ -1,31 +1,22 @@
 import {
   createContext,
-  ReactNode,
   useContext,
   useEffect,
   useState,
+  type ReactNode,
 } from "react";
-import { authService } from "../services";
-
-interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  role: "member" | "manager";
-  mess_id: string | null;
-  created_at: string;
-}
+import { authService, type User } from "../services";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (
     email: string,
     fullName: string,
     password: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   createMess: (
     name: string,
     address: string,

@@ -1,5 +1,9 @@
 import apiClient from "./apiClient";
 
+/**
+ * @deprecated This is the legacy generic expense service. 
+ * Use `expenseApi.ts` instead for the enhanced typed expenses module (meal, rent, utility).
+ */
 export type ExpenseCategory =
   | "electricity"
   | "groceries"

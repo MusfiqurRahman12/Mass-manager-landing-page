@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Badge,
@@ -46,6 +47,7 @@ interface NotificationSettings {
 export function SettingsPage() {
   const { isReady, user } = useRequireAuth();
   const { user: authUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [mess, setMess] = useState<Mess | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -239,7 +241,7 @@ export function SettingsPage() {
     try {
       // Use the new request workflow (Section 10.1)
       const response = await transferService.requestTransfer({
-        to_member_id: selectedMemberId,
+        target_member_id: selectedMemberId,
       });
       toast.success(response.message || "Transfer request sent successfully");
       setShowTransferModal(false);
@@ -268,7 +270,7 @@ export function SettingsPage() {
       await messService.deleteMess();
       toast.success("Mess deleted successfully");
       logout();
-      window.location.href = "/";
+      navigate("/");
     } catch {
       toast.error("Failed to delete mess");
     }

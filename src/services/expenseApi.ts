@@ -165,16 +165,9 @@ export const expenseApi = {
 
   // ========== Home Rent ==========
   getHomeRentPreview: async (params: HomeRentPreviewRequest): Promise<HomeRentPreviewResponse> => {
-    const queryParams = new URLSearchParams();
-    queryParams.set("total_amount", params.total_amount.toString());
-    queryParams.set("share_type", params.share_type);
-
-    if (params.member_shares && params.member_shares.length > 0) {
-      queryParams.set("member_shares", JSON.stringify(params.member_shares));
-    }
-
-    const { data } = await apiClient.get<HomeRentPreviewResponse>(
-      `/expenses/home-rent/preview?${queryParams.toString()}`
+    const { data } = await apiClient.post<HomeRentPreviewResponse>(
+      "/expenses/home-rent/preview",
+      params
     );
     return data;
   },
