@@ -3,7 +3,7 @@ export { ChatPage } from "./ChatPage";
 export { DashboardPage } from "./DashboardPage";
 export { DepositsPage } from "./DepositsPage";
 export { ExpenseSummaryPage } from "./ExpenseSummaryPage";
-export { ExpensesPage } from "./ExpensesPage";
+
 export { HomePage } from "./HomePage";
 export { HomeRentExpensePage } from "./HomeRentExpensePage";
 export { LoginPage } from "./LoginPage";

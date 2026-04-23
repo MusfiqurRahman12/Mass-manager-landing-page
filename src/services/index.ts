@@ -4,7 +4,7 @@ export * from "./authService";
 export * from "./chatService";
 export * from "./depositService";
 export * from "./expenseApi";
-export * from "./expenseService";
+
 export * from "./mealService";
 export * from "./memberService";
 export * from "./messService";

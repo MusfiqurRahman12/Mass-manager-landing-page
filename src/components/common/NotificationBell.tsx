@@ -125,7 +125,8 @@ export function NotificationBell() {
     // Navigate based on notification type
     switch (notification.type) {
       case "expense_added":
-        navigate("/expenses");
+        navigate("/expense-summary");
+
         break;
       case "meal_added":
         navigate("/meals");
@@ -141,7 +142,8 @@ export function NotificationBell() {
         navigate("/settings");
         break;
       case "market_day_reminder":
-        navigate("/expenses");
+        navigate("/meal-expenses");
+
         break;
       default:
         break;

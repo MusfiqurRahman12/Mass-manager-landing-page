@@ -3,7 +3,6 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
-  DollarSign,
   Home,
   MessageSquare,
   PiggyBank,
@@ -38,11 +37,7 @@ const navItems: NavItem[] = [
     icon: <UtensilsCrossed className="w-5 h-5" />,
     path: "/meals",
   },
-  {
-    label: "Expenses",
-    icon: <DollarSign className="w-5 h-5" />,
-    path: "/expenses",
-  },
+
   {
     label: "Deposits",
     icon: <PiggyBank className="w-5 h-5" />,

@@ -169,7 +169,8 @@ export function NotificationsPage() {
     // Navigate based on type
     switch (notification.type) {
       case "expense_added":
-        navigate("/expenses");
+        navigate("/expense-summary");
+
         break;
       case "meal_added":
         navigate("/meals");
@@ -185,7 +186,8 @@ export function NotificationsPage() {
         navigate("/settings");
         break;
       case "market_day_reminder":
-        navigate("/expenses");
+        navigate("/meal-expenses");
+
         break;
     }
   };

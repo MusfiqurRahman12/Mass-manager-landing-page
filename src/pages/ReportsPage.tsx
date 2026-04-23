@@ -15,19 +15,25 @@ import { MainLayout } from "../components/layout";
 
 import { useRequireAuth } from "../hooks";
 import { depositService, type Deposit } from "../services/depositService";
-import { expenseService, type Expense } from "../services/expenseService";
 import { mealService, type Meal } from "../services/mealService";
+import { expenseApi, type HomeRentExpense, type UtilityExpense, type MemberSummary as ExpenseMemberSummary, type MealExpense } from "../services/expenseApi";
+import { pdfService } from "../services/pdfService";
 import { memberService, type Member } from "../services/memberService";
 import { monthService, type Month } from "../services/monthService";
-import { pdfService } from "../services/pdfService";
+
+
+
 
 interface MemberSummary {
   member: Member;
   totalMeals: number;
   mealCost: number;
+  homeRentShare: number;
+  utilityShare: number;
   totalDeposits: number;
   balance: number;
 }
+
 
 interface ExpenseByCategory {
   category: string;
@@ -40,11 +46,18 @@ export function ReportsPage() {
   const navigate = useNavigate();
   const [activeMonth, setActiveMonth] = useState<Month | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [mealExpenses, setMealExpenses] = useState<MealExpense[]>([]);
+  const [rentExpenses, setRentExpenses] = useState<HomeRentExpense[]>([]);
+  const [utilityExpenses, setUtilityExpenses] = useState<UtilityExpense[]>([]);
+
   const [meals, setMeals] = useState<Meal[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [memberExpenseSummaries, setMemberExpenseSummaries] = useState<ExpenseMemberSummary[]>([]);
+  const [mealSummary, setMealSummary] = useState<{ total_meal_expenses: number; total_meals: number; meal_rate: number } | null>(null);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+
 
   // Member detail modal
   const [selectedMember, setSelectedMember] = useState<MemberSummary | null>(
@@ -70,15 +83,27 @@ export function ReportsPage() {
       setMembers(membersData);
 
       if (monthData) {
-        const [mealsData, expensesData, depositsData] = await Promise.all([
-          mealService.getMeals(),
-          expenseService.getExpenses({ month_id: monthData.id }),
+        const [mealSummaryData, expenseSummary, mealsData, depositsData] = await Promise.all([
+          expenseApi.getMealExpenses(monthData.id),
+          expenseApi.getSummaryByMembers(monthData.id),
+          mealService.getMeals({ month_id: monthData.id }),
           depositService.getDeposits({ month_id: monthData.id }),
         ]);
+        setMealSummary({
+          total_meal_expenses: mealSummaryData.total_meal_expenses,
+          total_meals: mealSummaryData.total_meals,
+          meal_rate: mealSummaryData.meal_rate
+        });
+        setMealExpenses(mealSummaryData.expenses);
+        setRentExpenses(expenseSummary.home_rent_expenses);
+        setUtilityExpenses(expenseSummary.utility_expenses);
+        setMemberExpenseSummaries(expenseSummary.member_summaries);
         setMeals(mealsData);
-        setExpenses(expensesData);
         setDeposits(depositsData);
       }
+
+
+
     } catch (error) {
       toast.error("Failed to load report data");
     } finally {
@@ -100,18 +125,26 @@ export function ReportsPage() {
 
   const memberSummaries: MemberSummary[] = members.map((member) => {
     const totalMeals = getMemberMeals(member.user_id);
-    const mealCost = totalMeals * (activeMonth?.meal_rate || 0);
+    const mealCost = totalMeals * (mealSummary?.meal_rate || 0);
     const totalDeposits = getMemberDeposits(member.user_id);
-    const balance = totalDeposits - mealCost;
+    
+    const expSummary = memberExpenseSummaries.find(s => s.member_id === member.user_id);
+    const homeRentShare = expSummary?.home_rent_share || 0;
+    const utilityShare = expSummary?.utility_share || 0;
+    
+    const balance = totalDeposits - (mealCost + homeRentShare + utilityShare);
 
     return {
       member,
       totalMeals,
       mealCost,
+      homeRentShare,
+      utilityShare,
       totalDeposits,
       balance,
     };
   });
+
 
   const totalMeals = memberSummaries.reduce((sum, m) => sum + m.totalMeals, 0);
   const totalDeposits = memberSummaries.reduce(
@@ -120,28 +153,16 @@ export function ReportsPage() {
   );
   const totalMealCost = memberSummaries.reduce((sum, m) => sum + m.mealCost, 0);
 
-  // Expense breakdown by category
-  const expenseByCategory: ExpenseByCategory[] = (() => {
-    const categories: Record<string, number> = {};
-    expenses.forEach((e) => {
-      categories[e.category] = (categories[e.category] || 0) + e.amount;
-    });
+  const totalExpenses = (mealSummary?.total_meal_expenses || 0) + 
+                        rentExpenses.reduce((sum, e) => sum + e.total_amount, 0) + 
+                        utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0);
 
-    const total = Object.values(categories).reduce(
-      (sum, amount) => sum + amount,
-      0,
-    );
+  const expenseByCategory: ExpenseByCategory[] = [
+    { category: "Meals", amount: mealSummary?.total_meal_expenses || 0, percentage: totalExpenses > 0 ? ((mealSummary?.total_meal_expenses || 0) / totalExpenses) * 100 : 0 },
+    { category: "Home Rent", amount: rentExpenses.reduce((sum, e) => sum + e.total_amount, 0), percentage: totalExpenses > 0 ? (rentExpenses.reduce((sum, e) => sum + e.total_amount, 0) / totalExpenses) * 100 : 0 },
+    { category: "Utilities", amount: utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0), percentage: totalExpenses > 0 ? (utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0) / totalExpenses) * 100 : 0 },
+  ].sort((a, b) => b.amount - a.amount);
 
-    return Object.entries(categories)
-      .map(([category, amount]) => ({
-        category,
-        amount,
-        percentage: total > 0 ? (amount / total) * 100 : 0,
-      }))
-      .sort((a, b) => b.amount - a.amount);
-  })();
-
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -153,29 +174,19 @@ export function ReportsPage() {
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
+      "Meals": "🍲",
+      "Home Rent": "🏠",
+      "Utilities": "💡",
       electricity: "⚡",
-      groceries: "🛒",
-      maintenance: "🔧",
-      cleaning: "🧹",
       water: "💧",
       gas: "🔥",
+      internet: "🌐",
       other: "📦",
     };
     return icons[category] || "📦";
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      electricity: "bg-yellow-100 text-yellow-800",
-      groceries: "bg-green-100 text-green-800",
-      maintenance: "bg-blue-100 text-blue-800",
-      cleaning: "bg-purple-100 text-purple-800",
-      water: "bg-cyan-100 text-cyan-800",
-      gas: "bg-orange-100 text-orange-800",
-      other: "bg-gray-100 text-gray-800",
-    };
-    return colors[category] || "bg-gray-100 text-gray-800";
-  };
+  // unused: getCategoryColor
 
   const handleDownloadPDF = async () => {
     if (!activeMonth) {
@@ -424,12 +435,11 @@ export function ReportsPage() {
                       <tr className="text-left text-sm text-neutral-500 border-b border-neutral-200 dark:border-neutral-700">
                         <th className="pb-3 font-medium">Member</th>
                         <th className="pb-3 font-medium text-right">Meals</th>
-                        <th className="pb-3 font-medium text-right">Cost</th>
-                        <th className="pb-3 font-medium text-right">
-                          Deposits
-                        </th>
+                        <th className="pb-3 font-medium text-right">Meal Cost</th>
+                        <th className="pb-3 font-medium text-right">Rent</th>
+                        <th className="pb-3 font-medium text-right">Utils</th>
+                        <th className="pb-3 font-medium text-right">Deposits</th>
                         <th className="pb-3 font-medium text-right">Balance</th>
-                        <th className="pb-3 font-medium text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm">
@@ -444,66 +454,35 @@ export function ReportsPage() {
                               <span className="font-medium">
                                 {summary.member.full_name}
                               </span>
-                              {summary.member.role === "manager" && (
-                                <Badge size="sm" variant="success">
-                                  M
-                                </Badge>
-                              )}
                             </div>
                           </td>
-                          <td className="py-3 text-right">
-                            {summary.totalMeals}
-                          </td>
-                          <td className="py-3 text-right">
-                            {formatCurrency(summary.mealCost)}
-                          </td>
-                          <td className="py-3 text-right">
-                            {formatCurrency(summary.totalDeposits)}
-                          </td>
-                          <td className="py-3 text-right">
-                            <span
-                              className={
-                                summary.balance >= 0
-                                  ? "text-success"
-                                  : "text-error"
-                              }
-                            >
-                              {formatCurrency(summary.balance)}
-                            </span>
-                          </td>
-                          <td className="py-3 text-right">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownloadMemberPDF(summary.member.user_id);
-                              }}
-                            >
-                              PDF
-                            </Button>
+                          <td className="py-3 text-right">{summary.totalMeals}</td>
+                          <td className="py-3 text-right">{formatCurrency(summary.mealCost)}</td>
+                          <td className="py-3 text-right">{formatCurrency(summary.homeRentShare)}</td>
+                          <td className="py-3 text-right">{formatCurrency(summary.utilityShare)}</td>
+                          <td className="py-3 text-right text-success font-medium">{formatCurrency(summary.totalDeposits)}</td>
+                          <td className={`py-3 text-right font-bold ${summary.balance >= 0 ? "text-success" : "text-error"}`}>
+                            {formatCurrency(summary.balance)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="font-semibold">
-                      <tr className="border-t-2 border-neutral-200 dark:border-neutral-700">
-                        <td className="py-3">Total</td>
+                    <tfoot className="font-bold border-t-2 border-neutral-200 dark:border-neutral-700">
+                      <tr>
+                        <td className="py-3">Totals</td>
                         <td className="py-3 text-right">{totalMeals}</td>
-                        <td className="py-3 text-right">
-                          {formatCurrency(totalMealCost)}
+                        <td className="py-3 text-right">{formatCurrency(totalMealCost)}</td>
+                        <td className="py-3 text-right">{formatCurrency(rentExpenses.reduce((sum, e) => sum + e.total_amount, 0))}</td>
+                        <td className="py-3 text-right">{formatCurrency(utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0))}</td>
+                        <td className="py-3 text-right">{formatCurrency(totalDeposits)}</td>
+                        <td className={`py-3 text-right ${totalDeposits - totalExpenses >= 0 ? "text-success" : "text-error"}`}>
+                          {formatCurrency(totalDeposits - (totalMealCost + rentExpenses.reduce((sum, e) => sum + e.total_amount, 0) + utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0)))}
                         </td>
-                        <td className="py-3 text-right">
-                          {formatCurrency(totalDeposits)}
-                        </td>
-                        <td className="py-3 text-right">
-                          {formatCurrency(totalDeposits - totalMealCost)}
-                        </td>
-                        <td></td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
+
               </Card>
 
               {/* Expense Distribution */}
@@ -565,47 +544,54 @@ export function ReportsPage() {
                   <thead>
                     <tr className="text-left text-sm text-neutral-500 border-b border-neutral-200 dark:border-neutral-700">
                       <th className="pb-3 font-medium">Date</th>
-                      <th className="pb-3 font-medium">Category</th>
+                      <th className="pb-3 font-medium">Type</th>
                       <th className="pb-3 font-medium">Description</th>
                       <th className="pb-3 font-medium text-right">Amount</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm">
-                    {expenses.slice(0, 10).map((expense) => (
+                    {[
+                      ...mealExpenses.map(e => ({ ...e, type: "Meal", date: e.expense_date })),
+                      ...rentExpenses.map(e => ({ ...e, type: "Rent", date: e.expense_date })),
+                      ...utilityExpenses.map(e => ({ ...e, type: "Utility", date: e.expense_date }))
+                    ]
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .slice(0, 10)
+                    .map((expense, idx) => (
                       <tr
-                        key={expense.id}
+                        key={idx}
                         className="border-b border-neutral-100 dark:border-neutral-800 last:border-0"
                       >
                         <td className="py-3">
-                          {new Date(expense.expense_date).toLocaleDateString()}
+                          {new Date(expense.date).toLocaleDateString()}
                         </td>
                         <td className="py-3">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(
-                              expense.category,
-                            )}`}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                              expense.type === "Meal" ? "bg-orange-100 text-orange-800" :
+                              expense.type === "Rent" ? "bg-blue-100 text-blue-800" :
+                              "bg-purple-100 text-purple-800"
+                            }`}
                           >
-                            {getCategoryIcon(expense.category)}
-                            <span className="capitalize">
-                              {expense.category}
-                            </span>
+                            {expense.type}
                           </span>
                         </td>
                         <td className="py-3">{expense.description}</td>
-                        <td className="py-3 text-right">
-                          {formatCurrency(expense.amount)}
+                        <td className="py-3 text-right font-medium">
+                          {formatCurrency("total_amount" in expense ? expense.total_amount : expense.amount)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                {expenses.length === 0 && (
+                {mealExpenses.length === 0 && rentExpenses.length === 0 && utilityExpenses.length === 0 && (
                   <p className="text-center text-neutral-500 py-8">
                     No expenses recorded this month
                   </p>
                 )}
               </div>
+
             </Card>
 
             {/* Settlement Summary */}

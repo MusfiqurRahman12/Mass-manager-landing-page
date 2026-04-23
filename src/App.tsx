@@ -12,7 +12,6 @@ import {
   DashboardPage,
   DepositsPage,
   ExpenseSummaryPage,
-  ExpensesPage,
   HomePage,
   HomeRentExpensePage,
   LoginPage,
@@ -85,15 +84,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Legacy Expenses Page - kept for backward compatibility */}
-        <Route
-          path="/expenses"
-          element={
-            <ProtectedRoute>
-              <ExpensesPage />
-            </ProtectedRoute>
-          }
-        />
+
         {/* New Expense Module Routes */}
         <Route
           path="/expense-summary"

@@ -286,7 +286,7 @@ export function DashboardPage() {
             <div className="space-y-3">
               {[
                 { label: "Add Meal", path: "/meals", icon: "🍽️" },
-                { label: "Add Expense", path: "/expenses", icon: "💰" },
+                { label: "Add Expense", path: "/expense-summary", icon: "💰" },
                 { label: "Add Deposit", path: "/deposits", icon: "💵" },
                 { label: "View Members", path: "/members", icon: "👥" },
               ].map((action) => (

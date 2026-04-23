@@ -5,19 +5,24 @@ import { Badge, Button, Card, LoadingSpinner } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useRequireAuth } from "../hooks";
 import { depositService, type Deposit } from "../services/depositService";
-import { expenseService, type Expense } from "../services/expenseService";
 import { mealService, type Meal } from "../services/mealService";
+import { expenseApi, type HomeRentExpense, type UtilityExpense, type MemberSummary as ExpenseMemberSummary, type MealExpense } from "../services/expenseApi";
+import { pdfService } from "../services/pdfService";
 import { memberService, type Member } from "../services/memberService";
 import { monthService, type Month } from "../services/monthService";
-import { pdfService } from "../services/pdfService";
+
+
 
 interface MemberSummary {
   member: Member;
   totalMeals: number;
   mealCost: number;
+  homeRentShare: number;
+  utilityShare: number;
   totalDeposits: number;
   balance: number;
 }
+
 
 interface ExpenseByCategory {
   category: string;
@@ -32,10 +37,15 @@ export function MonthDetailsPage() {
   const [month, setMonth] = useState<Month | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [mealExpenses, setMealExpenses] = useState<MealExpense[]>([]);
+  const [rentExpenses, setRentExpenses] = useState<HomeRentExpense[]>([]);
+  const [utilityExpenses, setUtilityExpenses] = useState<UtilityExpense[]>([]);
+  const [memberExpenseSummaries, setMemberExpenseSummaries] = useState<ExpenseMemberSummary[]>([]);
+  const [mealSummary, setMealSummary] = useState<{ total_meal_expenses: number; total_meals: number; meal_rate: number } | null>(null);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
 
   useEffect(() => {
     if (isReady && monthId) {
@@ -55,13 +65,22 @@ export function MonthDetailsPage() {
       setMonth(monthData);
       setMembers(membersData);
 
-      const [mealsData, expensesData, depositsData] = await Promise.all([
+      const [mealsData, mealSummaryData, expenseSummary, depositsData] = await Promise.all([
         mealService.getMeals({ month_id: monthId }),
-        expenseService.getExpenses({ month_id: monthId }),
+        expenseApi.getMealExpenses(monthId!),
+        expenseApi.getSummaryByMembers(monthId!),
         depositService.getDeposits({ month_id: monthId }),
       ]);
       setMeals(mealsData);
-      setExpenses(expensesData);
+      setMealSummary({
+        total_meal_expenses: mealSummaryData.total_meal_expenses,
+        total_meals: mealSummaryData.total_meals,
+        meal_rate: mealSummaryData.meal_rate
+      });
+      setMealExpenses(mealSummaryData.expenses);
+      setRentExpenses(expenseSummary.home_rent_expenses);
+      setUtilityExpenses(expenseSummary.utility_expenses);
+      setMemberExpenseSummaries(expenseSummary.member_summaries);
       setDeposits(depositsData);
     } catch (error) {
       toast.error("Failed to load month details");
@@ -69,6 +88,7 @@ export function MonthDetailsPage() {
       setIsLoading(false);
     }
   };
+
 
   const getMemberMeals = (memberId: string) => {
     return meals
@@ -84,35 +104,39 @@ export function MonthDetailsPage() {
 
   const memberSummaries: MemberSummary[] = members.map((member) => {
     const totalMeals = getMemberMeals(member.user_id);
-    const mealCost = totalMeals * (month?.meal_rate || 0);
+    const mealCost = totalMeals * (mealSummary?.meal_rate || 0);
     const totalDeposits = getMemberDeposits(member.user_id);
+    
+    const expSummary = memberExpenseSummaries.find(s => s.member_id === member.user_id);
+    const homeRentShare = expSummary?.home_rent_share || 0;
+    const utilityShare = expSummary?.utility_share || 0;
+
     return {
       member,
       totalMeals,
       mealCost,
+      homeRentShare,
+      utilityShare,
       totalDeposits,
-      balance: totalDeposits - mealCost,
+      balance: totalDeposits - (mealCost + homeRentShare + utilityShare),
     };
   });
 
-  const totalDeposits = deposits.reduce((sum, d) => sum + d.amount, 0);
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  const expensesByCategory: ExpenseByCategory[] = Object.entries(
-    expenses.reduce(
-      (acc, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-        return acc;
-      },
-      {} as Record<string, number>,
-    ),
-  )
-    .map(([category, amount]) => ({
-      category,
-      amount,
-      percentage: month?.total_cost ? (amount / month.total_cost) * 100 : 0,
-    }))
-    .sort((a, b) => b.amount - a.amount);
+  const totalMealCost = memberSummaries.reduce((sum, m) => sum + m.mealCost, 0);
+  const totalDepositsSum = deposits.reduce((sum, d) => sum + d.amount, 0);
+
+
+  const totalExpenses = (mealSummary?.total_meal_expenses || 0) + 
+                        rentExpenses.reduce((sum, e) => sum + e.total_amount, 0) + 
+                        utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0);
+
+  const expensesByCategory: ExpenseByCategory[] = [
+    { category: "Meals", amount: mealSummary?.total_meal_expenses || 0, percentage: totalExpenses > 0 ? ((mealSummary?.total_meal_expenses || 0) / totalExpenses) * 100 : 0 },
+    { category: "Home Rent", amount: rentExpenses.reduce((sum, e) => sum + e.total_amount, 0), percentage: totalExpenses > 0 ? (rentExpenses.reduce((sum, e) => sum + e.total_amount, 0) / totalExpenses) * 100 : 0 },
+    { category: "Utilities", amount: utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0), percentage: totalExpenses > 0 ? (utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0) / totalExpenses) * 100 : 0 },
+  ].sort((a, b) => b.amount - a.amount);
+
 
   const handleDownloadPDF = async () => {
     if (!month || !monthId) return;
@@ -274,11 +298,18 @@ export function MonthDetailsPage() {
                     Meal Cost
                   </th>
                   <th className="text-right px-6 py-3 text-sm font-medium text-neutral-500">
+                    Rent
+                  </th>
+                  <th className="text-right px-6 py-3 text-sm font-medium text-neutral-500">
+                    Utils
+                  </th>
+                  <th className="text-right px-6 py-3 text-sm font-medium text-neutral-500">
                     Deposits
                   </th>
                   <th className="text-right px-6 py-3 text-sm font-medium text-neutral-500">
                     Balance
                   </th>
+
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -292,7 +323,7 @@ export function MonthDetailsPage() {
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
                           {summary.member.full_name
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")
                             .toUpperCase()
                             .substring(0, 2)}
@@ -313,6 +344,12 @@ export function MonthDetailsPage() {
                     <td className="px-6 py-4 text-right">
                       {formatCurrency(summary.mealCost)}
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      {formatCurrency(summary.homeRentShare)}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {formatCurrency(summary.utilityShare)}
+                    </td>
                     <td className="px-6 py-4 text-right text-success">
                       {formatCurrency(summary.totalDeposits)}
                     </td>
@@ -331,20 +368,28 @@ export function MonthDetailsPage() {
                   <td className="px-6 py-4">Total</td>
                   <td className="px-6 py-4 text-right">{month.total_meal}</td>
                   <td className="px-6 py-4 text-right">
-                    {formatCurrency(month.total_cost)}
+                    {formatCurrency(totalMealCost)}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {formatCurrency(rentExpenses.reduce((sum, e) => sum + e.total_amount, 0))}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {formatCurrency(utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0))}
                   </td>
                   <td className="px-6 py-4 text-right text-success">
-                    {formatCurrency(totalDeposits)}
+                    {formatCurrency(totalDepositsSum)}
                   </td>
                   <td
                     className={`px-6 py-4 text-right ${
-                      month.closing_balance >= 0 ? "text-success" : "text-error"
+                      totalDepositsSum - totalExpenses >= 0 ? "text-success" : "text-error"
                     }`}
                   >
-                    {formatCurrency(month.closing_balance)}
+                    {formatCurrency(totalDepositsSum - totalExpenses)}
                   </td>
+
                 </tr>
               </tfoot>
+
             </table>
           </div>
         </Card>
@@ -553,18 +598,19 @@ export function MonthDetailsPage() {
             <h2 className="text-xl font-semibold">Recent Transactions</h2>
           </div>
           <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
-            {[...expenses, ...deposits]
-              .sort(
-                (a, b) =>
-                  new Date(b.created_at).getTime() -
-                  new Date(a.created_at).getTime(),
-              )
+            {[
+              ...mealExpenses.map(e => ({ ...e, type: "Meal", date: e.expense_date, amount: e.amount, desc: e.description })),
+              ...rentExpenses.map(e => ({ ...e, type: "Rent", date: e.expense_date, amount: e.total_amount, desc: e.description })),
+              ...utilityExpenses.map(e => ({ ...e, type: "Utility", date: e.expense_date, amount: e.total_amount, desc: e.description })),
+              ...deposits.map(d => ({ ...d, type: "Deposit", date: d.deposit_date, amount: d.amount, desc: d.note }))
+            ]
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
               .slice(0, 10)
               .map((transaction, index) => {
-                const isExpense = "category" in transaction;
+                const isExpense = transaction.type !== "Deposit";
                 return (
                   <div
-                    key={`${isExpense ? "exp" : "dep"}-${transaction.id}-${index}`}
+                    key={`${transaction.type}-${index}`}
                     className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   >
                     <div className="flex items-center gap-3">
@@ -576,45 +622,19 @@ export function MonthDetailsPage() {
                         }`}
                       >
                         {isExpense ? (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M20 12H4"
-                            />
-                          </svg>
+                          <span className="text-lg">
+                            {transaction.type === "Meal" ? "🍲" : transaction.type === "Rent" ? "🏠" : "💡"}
+                          </span>
                         ) : (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4v16m8-8H4"
-                            />
-                          </svg>
+                          <span className="text-lg">💵</span>
                         )}
                       </div>
                       <div>
                         <p className="font-medium">
-                          {isExpense
-                            ? getCategoryLabel(transaction.category)
-                            : "Deposit"}
+                          {transaction.type}
                         </p>
                         <p className="text-sm text-neutral-500">
-                          {isExpense
-                            ? transaction.description || "No description"
-                            : transaction.note || "No note"}
+                          {transaction.desc || "No description"}
                         </p>
                       </div>
                     </div>
@@ -626,7 +646,7 @@ export function MonthDetailsPage() {
                         {formatCurrency(transaction.amount)}
                       </p>
                       <p className="text-xs text-neutral-500">
-                        {new Date(transaction.created_at).toLocaleDateString()}
+                        {new Date(transaction.date).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
