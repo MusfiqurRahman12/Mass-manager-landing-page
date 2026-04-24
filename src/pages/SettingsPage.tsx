@@ -490,11 +490,10 @@ export function SettingsPage() {
                       option.value as "light" | "dark" | "system",
                     )
                   }
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    theme === option.value
+                  className={`p-4 rounded-lg border-2 transition-all ${theme === option.value
                       ? "border-primary bg-primary/5"
                       : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300"
-                  }`}
+                    }`}
                 >
                   <div className="text-2xl mb-1">{option.icon}</div>
                   <div className="text-sm font-medium">{option.label}</div>
@@ -691,37 +690,6 @@ export function SettingsPage() {
           </div>
         </Card>
 
-        {/* Keyboard Shortcuts */}
-        <Card className="space-y-6">
-          <div className="border-b border-neutral-200 dark:border-neutral-700 pb-4">
-            <h2 className="text-xl font-semibold">Keyboard Shortcuts</h2>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Quick navigation keys
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { key: "Ctrl + D", action: "Go to Dashboard" },
-              { key: "Ctrl + M", action: "Go to Meals" },
-              { key: "Ctrl + E", action: "Go to Expenses" },
-              { key: "Ctrl + R", action: "Go to Reports" },
-              { key: "Ctrl + S", action: "Go to Settings" },
-              { key: "Ctrl + /", action: "Show shortcuts" },
-            ].map((shortcut) => (
-              <div
-                key={shortcut.key}
-                className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg"
-              >
-                <span className="text-sm">{shortcut.action}</span>
-                <kbd className="px-2 py-1 bg-white dark:bg-neutral-700 rounded text-xs font-mono border border-neutral-200 dark:border-neutral-600">
-                  {shortcut.key}
-                </kbd>
-              </div>
-            ))}
-          </div>
-        </Card>
-
         {/* Manager Transfer - Only for managers */}
         {isManager && (
           <Card className="space-y-4 border-warning/30">
@@ -790,11 +758,10 @@ export function SettingsPage() {
                 {otherMembers.map((member) => (
                   <label
                     key={member.user_id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedMemberId === member.user_id
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedMemberId === member.user_id
                         ? "border-primary bg-primary/5"
                         : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"

@@ -17,11 +17,6 @@ import { type Member, memberService } from "../services/memberService";
 import { transferService } from "../services/transferService";
 import { isValidEmail } from "../utils";
 
-interface InviteCode {
-  code: string;
-  expiresAt: string;
-}
-
 export function MembersPage() {
   const { isReady, user } = useRequireAuth();
   const [members, setMembers] = useState<Member[]>([]);
@@ -30,13 +25,15 @@ export function MembersPage() {
 
   // Add member modal state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"existing" | "manual">("existing");
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [emailError, setEmailError] = useState("");
 
-  // Invite code state
-  const [inviteCode, setInviteCode] = useState<InviteCode | null>(null);
-  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  // Manual member state
+  const [manualName, setManualName] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
+  const [manualPassword, setManualPassword] = useState("");
 
   // Member details modal
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -71,55 +68,60 @@ export function MembersPage() {
   };
 
   const handleAddMember = async () => {
-    if (!isValidEmail(newMemberEmail)) {
-      setEmailError("Please enter a valid email");
-      return;
-    }
-
-    setIsAdding(true);
-    setEmailError("");
-    try {
-      await memberService.addMember({ email: newMemberEmail });
-      toast.success("Member added successfully");
-      setNewMemberEmail("");
-      setShowAddModal(false);
-      loadMembers();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to add member",
-      );
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  const generateInviteCode = async () => {
-    setIsGeneratingCode(true);
-    try {
-      // Simulate API call - replace with actual endpoint when available
-      const mockCode = Math.random()
-        .toString(36)
-        .substring(2, 10)
-        .toUpperCase();
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24);
-
-      setInviteCode({
-        code: mockCode,
-        expiresAt: expiresAt.toISOString(),
-      });
-      toast.success("Invite code generated");
-    } catch (error) {
-      toast.error("Failed to generate invite code");
-    } finally {
-      setIsGeneratingCode(false);
-    }
-  };
-
-  const copyInviteCode = () => {
-    if (inviteCode) {
-      navigator.clipboard.writeText(inviteCode.code);
-      toast.success("Invite code copied");
+    if (activeTab === "existing") {
+      if (!isValidEmail(newMemberEmail)) {
+        setEmailError("Please enter a valid email");
+        return;
+      }
+  
+      setIsAdding(true);
+      setEmailError("");
+      try {
+        await memberService.addMember({ email: newMemberEmail });
+        toast.success("Member added successfully");
+        setNewMemberEmail("");
+        setShowAddModal(false);
+        loadMembers();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to add member",
+        );
+      } finally {
+        setIsAdding(false);
+      }
+    } else {
+      if (!manualName || !manualEmail || !manualPassword) {
+        toast.error("Please fill in all fields");
+        return;
+      }
+      if (!isValidEmail(manualEmail)) {
+        toast.error("Please enter a valid email");
+        return;
+      }
+      if (manualPassword.length < 6) {
+        toast.error("Password must be at least 6 characters");
+        return;
+      }
+      setIsAdding(true);
+      try {
+        await memberService.createAndAddMember({
+          full_name: manualName,
+          email: manualEmail,
+          password: manualPassword,
+        });
+        toast.success("New member created and added successfully");
+        setManualName("");
+        setManualEmail("");
+        setManualPassword("");
+        setShowAddModal(false);
+        loadMembers();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to create and add member",
+        );
+      } finally {
+        setIsAdding(false);
+      }
     }
   };
 
@@ -249,57 +251,91 @@ export function MembersPage() {
           )}
         </div>
 
-        {/* Members Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {members.map((member) => (
-            <Card
-              key={member.user_id}
-              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => openMemberDetails(member)}
-            >
-              <div className="flex items-center gap-4">
+        {/* Members List */}
+        <Card className="overflow-hidden border border-neutral-200/60 dark:border-neutral-800/60 shadow-sm">
+          <div className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+            {members.map((member) => (
+              <div
+                key={member.user_id}
+                className="p-4 sm:px-6 flex items-center gap-4 hover:bg-neutral-50/80 dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer group"
+                onClick={() => openMemberDetails(member)}
+              >
                 <div
                   className={`w-12 h-12 rounded-full ${getAvatarColor(
                     member.full_name,
-                  )} flex items-center justify-center text-white font-semibold`}
+                  )} flex items-center justify-center text-white text-sm font-semibold shadow-inner shrink-0`}
                 >
                   {getInitials(member.full_name)}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold truncate">
-                      {member.full_name}
-                    </h3>
-                    {member.role === "manager" && (
-                      <Badge variant="success" size="sm">
-                        Manager
-                      </Badge>
-                    )}
+                
+                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate text-base">
+                        {member.full_name}
+                      </h3>
+                      {member.role === "manager" && (
+                        <Badge variant="success" size="sm" className="px-2 py-0.5 rounded-md font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-500/20">
+                          Manager
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400 truncate">
+                      <svg className="w-4 h-4 mr-1.5 shrink-0 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span className="truncate">{member.email}</span>
+                    </div>
                   </div>
-                  <p className="text-sm text-neutral-500 truncate">
-                    {member.email}
-                  </p>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    Joined {new Date(member.joined_at).toLocaleDateString()}
-                  </p>
+                  
+                  <div className="flex items-center gap-6 sm:text-right shrink-0">
+                    <div className="hidden sm:block">
+                      <p className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-1">Joined</p>
+                      <p className="text-sm text-neutral-700 dark:text-neutral-300 font-medium">
+                        {new Date(member.joined_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                    
+                    <div className="sm:hidden text-xs text-neutral-500 flex items-center mt-1">
+                      <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {new Date(member.joined_at).toLocaleDateString()}
+                    </div>
+
+                    <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:translate-x-0 -translate-x-2 hidden sm:flex">
+                      <svg
+                        className="w-4 h-4 text-primary-600 dark:text-primary-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-                <svg
-                  className="w-5 h-5 text-neutral-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </div>
-            </Card>
-          ))}
-        </div>
+            ))}
+            
+            {members.length === 0 && (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-1">No members found</h3>
+                <p className="text-neutral-500 max-w-sm mx-auto">Get started by inviting members or adding them manually to your mess.</p>
+              </div>
+            )}
+          </div>
+        </Card>
       </div>
 
       {/* Add Member Modal */}
@@ -309,55 +345,86 @@ export function MembersPage() {
         title="Add New Member"
       >
         <ModalBody>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Email Address
-              </label>
-              <Input
-                type="email"
-                value={newMemberEmail}
-                onChange={(e) => {
-                  setNewMemberEmail(e.target.value);
-                  setEmailError("");
-                }}
-                placeholder="member@example.com"
-                error={emailError}
-              />
-              <p className="text-xs text-neutral-500 mt-1">
-                Enter the email of an existing user to invite them to your mess
-              </p>
-            </div>
+          <div className="flex border-b border-neutral-200 dark:border-neutral-700 mb-4">
+            <button
+              className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "existing"
+                  ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                  : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+              }`}
+              onClick={() => setActiveTab("existing")}
+            >
+              Add Existing
+            </button>
+            <button
+              className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "manual"
+                  ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                  : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+              }`}
+              onClick={() => setActiveTab("manual")}
+            >
+              Create New
+            </button>
+          </div>
 
-            <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
-              <label className="block text-sm font-medium mb-2">
-                Or Generate Invite Code
-              </label>
-              {inviteCode ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg font-mono text-lg text-center">
-                      {inviteCode.code}
-                    </code>
-                    <Button variant="outline" onClick={copyInviteCode}>
-                      Copy
-                    </Button>
-                  </div>
-                  <p className="text-xs text-neutral-500">
-                    Expires at {new Date(inviteCode.expiresAt).toLocaleString()}
-                  </p>
+          <div className="space-y-4">
+            {activeTab === "existing" ? (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  value={newMemberEmail}
+                  onChange={(e) => {
+                    setNewMemberEmail(e.target.value);
+                    setEmailError("");
+                  }}
+                  placeholder="member@example.com"
+                  error={emailError}
+                />
+                <p className="text-xs text-neutral-500 mt-1">
+                  Enter the email of an existing user to add them to your mess
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Full Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                    placeholder="John Doe"
+                  />
                 </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={generateInviteCode}
-                  isLoading={isGeneratingCode}
-                  className="w-full"
-                >
-                  Generate Invite Code
-                </Button>
-              )}
-            </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Email Address
+                  </label>
+                  <Input
+                    type="email"
+                    value={manualEmail}
+                    onChange={(e) => setManualEmail(e.target.value)}
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Initial Password
+                  </label>
+                  <Input
+                    type="password"
+                    value={manualPassword}
+                    onChange={(e) => setManualPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </ModalBody>
         <ModalFooter>
@@ -365,7 +432,7 @@ export function MembersPage() {
             Cancel
           </Button>
           <Button onClick={handleAddMember} isLoading={isAdding}>
-            Add Member
+            {activeTab === "existing" ? "Add Member" : "Create & Add Member"}
           </Button>
         </ModalFooter>
       </Modal>

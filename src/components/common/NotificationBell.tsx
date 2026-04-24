@@ -9,22 +9,42 @@ import {
 
 const NOTIFICATION_ICONS: Record<string, string> = {
   expense_added: "💰",
+  expense_updated: "💰",
+  expense_deleted: "🗑️",
   meal_added: "🍽️",
+  meal_updated: "🍽️",
+  meal_deleted: "🗑️",
   deposit_added: "💵",
+  deposit_updated: "💵",
+  deposit_deleted: "🗑️",
   member_joined: "👋",
   member_removed: "👋",
   manager_transfer_request: "👑",
+  manager_transfer_approved: "✅",
+  manager_transfer_rejected: "❌",
   market_day_reminder: "🛒",
+  month_started: "📅",
+  month_closed: "🔒",
 };
 
 const NOTIFICATION_COLORS: Record<string, string> = {
   expense_added: "bg-error/10 text-error",
+  expense_updated: "bg-warning/10 text-warning",
+  expense_deleted: "bg-neutral-500/10 text-neutral-500",
   meal_added: "bg-success/10 text-success",
+  meal_updated: "bg-info/10 text-info",
+  meal_deleted: "bg-neutral-500/10 text-neutral-500",
   deposit_added: "bg-success/10 text-success",
+  deposit_updated: "bg-info/10 text-info",
+  deposit_deleted: "bg-neutral-500/10 text-neutral-500",
   member_joined: "bg-primary/10 text-primary",
   member_removed: "bg-warning/10 text-warning",
   manager_transfer_request: "bg-warning/10 text-warning",
+  manager_transfer_approved: "bg-success/10 text-success",
+  manager_transfer_rejected: "bg-error/10 text-error",
   market_day_reminder: "bg-info/10 text-info",
+  month_started: "bg-primary/10 text-primary",
+  month_closed: "bg-neutral-500/10 text-neutral-500",
 };
 
 export function NotificationBell() {
@@ -125,13 +145,18 @@ export function NotificationBell() {
     // Navigate based on notification type
     switch (notification.type) {
       case "expense_added":
+      case "expense_updated":
+      case "expense_deleted":
         navigate("/expense-summary");
-
         break;
       case "meal_added":
+      case "meal_updated":
+      case "meal_deleted":
         navigate("/meals");
         break;
       case "deposit_added":
+      case "deposit_updated":
+      case "deposit_deleted":
         navigate("/deposits");
         break;
       case "member_joined":
@@ -139,11 +164,16 @@ export function NotificationBell() {
         navigate("/members");
         break;
       case "manager_transfer_request":
+      case "manager_transfer_approved":
+      case "manager_transfer_rejected":
         navigate("/settings");
         break;
       case "market_day_reminder":
         navigate("/meal-expenses");
-
+        break;
+      case "month_started":
+      case "month_closed":
+        navigate("/");
         break;
       default:
         break;

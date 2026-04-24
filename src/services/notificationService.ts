@@ -1,13 +1,23 @@
 import apiClient from "./apiClient";
 
 export type NotificationType =
-  | "expense_added"
   | "meal_added"
+  | "meal_updated"
+  | "meal_deleted"
+  | "expense_added"
+  | "expense_updated"
+  | "expense_deleted"
   | "deposit_added"
-  | "member_joined"
-  | "member_removed"
+  | "deposit_updated"
+  | "deposit_deleted"
   | "manager_transfer_request"
-  | "market_day_reminder";
+  | "manager_transfer_approved"
+  | "manager_transfer_rejected"
+  | "market_day_reminder"
+  | "month_started"
+  | "month_closed"
+  | "member_joined"
+  | "member_removed";
 
 export interface Notification {
   id: string;

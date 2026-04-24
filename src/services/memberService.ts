@@ -13,6 +13,12 @@ export interface AddMemberPayload {
   email: string;
 }
 
+export interface CreateAndAddMemberPayload {
+  full_name: string;
+  email: string;
+  password: string;
+}
+
 export interface TransferManagerPayload {
   user_id: string;
 }
@@ -27,6 +33,12 @@ export const memberService = {
   // Add new member by email
   addMember: async (payload: AddMemberPayload): Promise<Member> => {
     const { data } = await apiClient.post<Member>("/members", payload);
+    return data;
+  },
+
+  // Create new user and add to mess
+  createAndAddMember: async (payload: CreateAndAddMemberPayload): Promise<Member> => {
+    const { data } = await apiClient.post<Member>("/members/create-and-add", payload);
     return data;
   },
 
