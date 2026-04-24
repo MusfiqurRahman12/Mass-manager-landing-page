@@ -16,6 +16,7 @@ import { formatCurrency } from "../utils";
 import { type MealCost, mealService } from "../services/mealService";
 import { type Member, memberService } from "../services/memberService";
 import { type Month, monthService } from "../services/monthService";
+import { expenseApi, type MemberSummary as ExpenseMemberSummary } from "../services/expenseApi";
 
 
 export function DashboardPage() {
@@ -24,6 +25,7 @@ export function DashboardPage() {
   const [activeMonth, setActiveMonth] = useState<Month | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [mealCost, setMealCost] = useState<MealCost | null>(null);
+  const [memberSummary, setMemberSummary] = useState<ExpenseMemberSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isManager, setIsManager] = useState(false);
 
@@ -50,6 +52,13 @@ export function DashboardPage() {
       setActiveMonth(monthData);
       setMembers(membersData);
       setMealCost(costData);
+
+      if (user?.role !== "manager" && monthData) {
+        const summaries = await expenseApi.getSummaryByMembers(monthData.id).catch(() => null);
+        if (summaries?.member_summaries && summaries.member_summaries.length > 0) {
+          setMemberSummary(summaries.member_summaries[0]);
+        }
+      }
 
       // Set default next month date (1st of next month)
       if (monthData) {
@@ -172,45 +181,62 @@ export function DashboardPage() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <Card className="text-center p-6">
-            <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">
-              Total Meals
-            </p>
-            <h3 className="text-3xl font-bold mb-2">
-              {mealCost?.total_meal || 0}
-            </h3>
-            <Badge variant="primary">Current Month</Badge>
-          </Card>
+        {isManager ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Total Meals</p>
+              <h3 className="text-3xl font-bold mb-2">{mealCost?.total_meal || 0}</h3>
+              <Badge variant="primary">Current Month</Badge>
+            </Card>
 
-          <Card className="text-center p-6">
-            <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">
-              Meal Rate
-            </p>
-            <h3 className="text-3xl font-bold mb-2">
-              {formatCurrency(mealCost?.meal_rate || 0)}
-            </h3>
-            <Badge variant="warning">Per Meal</Badge>
-          </Card>
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Meal Rate</p>
+              <h3 className="text-3xl font-bold mb-2">{formatCurrency(mealCost?.meal_rate || 0)}</h3>
+              <Badge variant="warning">Per Meal</Badge>
+            </Card>
 
-          <Card className="text-center p-6">
-            <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">
-              Total Expenses
-            </p>
-            <h3 className="text-3xl font-bold mb-2">
-              {formatCurrency(mealCost?.total_cost || 0)}
-            </h3>
-            <Badge variant="success">Current Month</Badge>
-          </Card>
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Total Expenses</p>
+              <h3 className="text-3xl font-bold mb-2">{formatCurrency(mealCost?.total_cost || 0)}</h3>
+              <Badge variant="success">Current Month</Badge>
+            </Card>
 
-          <Card className="text-center p-6">
-            <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">
-              Members
-            </p>
-            <h3 className="text-3xl font-bold mb-2">{members.length}</h3>
-            <Badge variant="default">Active</Badge>
-          </Card>
-        </div>
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Members</p>
+              <h3 className="text-3xl font-bold mb-2">{members.length}</h3>
+              <Badge variant="default">Active</Badge>
+            </Card>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Meals (Est.)</p>
+              <h3 className="text-3xl font-bold mb-2">
+                {/* To get exact meals we'd need to fetch meals or use a full summary endpoint. As a workaround, we just show meal rate. */}
+                {mealCost?.meal_rate ? "Rate: " + formatCurrency(mealCost.meal_rate) : 0}
+              </h3>
+              <Badge variant="primary">Current Month</Badge>
+            </Card>
+
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Rent Share</p>
+              <h3 className="text-3xl font-bold mb-2">{formatCurrency(memberSummary?.home_rent_share || 0)}</h3>
+              <Badge variant="warning">Home Rent</Badge>
+            </Card>
+
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Utility Share</p>
+              <h3 className="text-3xl font-bold mb-2">{formatCurrency(memberSummary?.utility_share || 0)}</h3>
+              <Badge variant="success">Utilities</Badge>
+            </Card>
+
+            <Card className="text-center p-6">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Total Due Share</p>
+              <h3 className="text-3xl font-bold mb-2">{formatCurrency(memberSummary?.total_share || 0)}</h3>
+              <Badge variant="default">Rent + Utility</Badge>
+            </Card>
+          </div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

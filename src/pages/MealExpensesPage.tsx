@@ -7,6 +7,8 @@ import {
   Plus,
   Trash2,
   Utensils,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +23,7 @@ import {
   ModalBody,
   ModalFooter,
   Skeleton,
+  Badge,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
@@ -54,6 +57,11 @@ export function MealExpensesPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<MealExpense | null>(null);
+
+  // Approve modal state
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [expenseToApprove, setExpenseToApprove] = useState<MealExpense | null>(null);
+  const [addDeposit, setAddDeposit] = useState(true);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -105,10 +113,6 @@ export function MealExpensesPage() {
       return errors;
     },
     onSubmit: async (values) => {
-      if (!isManager) {
-        toast.error("Only managers can add meal expenses");
-        return;
-      }
       setIsSubmitting(true);
       try {
         const payload: AddMealExpensePayload = {
@@ -205,6 +209,46 @@ export function MealExpensesPage() {
       setExpenseToDelete(null);
     } catch (error) {
       toast.error("Failed to delete meal expense");
+      console.error(error);
+    }
+  };
+
+  const openApproveModal = (expense: MealExpense) => {
+    if (!isManager) return;
+    setExpenseToApprove(expense);
+    setAddDeposit(true);
+    setIsApproveModalOpen(true);
+  };
+
+  const confirmApprove = async () => {
+    if (!isManager || !expenseToApprove) return;
+    setIsSubmitting(true);
+    try {
+      await expenseApi.approveMealExpense(expenseToApprove.id, addDeposit);
+      toast.success(
+        addDeposit
+          ? "Expense approved & reimbursement deposit added"
+          : "Expense approved (no deposit added)"
+      );
+      await fetchData();
+      setIsApproveModalOpen(false);
+      setExpenseToApprove(null);
+    } catch (error) {
+      toast.error("Failed to approve meal expense");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async (expense: MealExpense) => {
+    if (!isManager) return;
+    try {
+      await expenseApi.rejectMealExpense(expense.id);
+      toast.success("Meal expense rejected successfully");
+      await fetchData();
+    } catch (error) {
+      toast.error("Failed to reject meal expense");
       console.error(error);
     }
   };
@@ -316,8 +360,7 @@ export function MealExpensesPage() {
         </div>
 
         {/* Add Expense Form */}
-        {isManager && (
-          <Card>
+        <Card>
             <CardHeader className="pb-4">
               <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
                 Add Meal Expense
@@ -384,7 +427,6 @@ export function MealExpensesPage() {
               </form>
             </CardBody>
           </Card>
-        )}
 
         {/* Expense List */}
         <Card>
@@ -427,6 +469,9 @@ export function MealExpensesPage() {
                         <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                           Amount
                         </th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                          Status
+                        </th>
                         {isManager && (
                           <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                             Actions
@@ -449,9 +494,44 @@ export function MealExpensesPage() {
                           <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white text-right font-medium">
                             {formatCurrency(expense.amount)}
                           </td>
+                          <td className="py-3 px-4 text-center">
+                            <Badge
+                              variant={
+                                expense.status === "approved"
+                                  ? "success"
+                                  : expense.status === "pending"
+                                  ? "warning"
+                                  : "error"
+                              }
+                            >
+                              {expense.status.charAt(0).toUpperCase() + expense.status.slice(1)}
+                            </Badge>
+                          </td>
                           {isManager && (
                             <td className="py-3 px-4 text-right">
                               <div className="flex justify-end gap-2">
+                                {expense.status === "pending" && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openApproveModal(expense)}
+                                      title="Approve"
+                                      className="text-success hover:text-success/80 hover:bg-success/10"
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleReject(expense)}
+                                      title="Reject"
+                                      className="text-error hover:text-error/80 hover:bg-error/10"
+                                    >
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -579,6 +659,82 @@ export function MealExpensesPage() {
           </Button>
           <Button type="submit" form="edit-form" isLoading={isSubmitting}>
             Update
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Approve Confirmation Modal */}
+      <Modal
+        isOpen={isApproveModalOpen}
+        onClose={() => {
+          setIsApproveModalOpen(false);
+          setExpenseToApprove(null);
+        }}
+        title="Approve Meal Expense"
+      >
+        <ModalBody>
+          {expenseToApprove && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800 space-y-1">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">Description</p>
+                <p className="font-medium text-neutral-900 dark:text-white">{expenseToApprove.description}</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">Amount</p>
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {new Intl.NumberFormat("en-US", { style: "currency", currency: "BDT", currencyDisplay: "narrowSymbol" }).format(expenseToApprove.amount)}
+                </p>
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="relative mt-0.5">
+                  <input
+                    id="add-deposit-checkbox"
+                    type="checkbox"
+                    checked={addDeposit}
+                    onChange={(e) => setAddDeposit(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                      addDeposit
+                        ? "bg-primary border-primary"
+                        : "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
+                    }`}
+                    onClick={() => setAddDeposit((v) => !v)}
+                  >
+                    {addDeposit && (
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="font-medium text-neutral-900 dark:text-white text-sm">
+                    Add reimbursement deposit to member's account
+                  </p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    {addDeposit
+                      ? "A deposit will be credited to the member for this amount."
+                      : "No deposit will be added. Member paid out of pocket."}
+                  </p>
+                </div>
+              </label>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setIsApproveModalOpen(false);
+              setExpenseToApprove(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button onClick={confirmApprove} isLoading={isSubmitting}>
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Approve
           </Button>
         </ModalFooter>
       </Modal>

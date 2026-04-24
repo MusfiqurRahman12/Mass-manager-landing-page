@@ -8,6 +8,7 @@ export interface MealExpense {
   expense_date: string;
   amount: number;
   description: string;
+  status: "pending" | "approved" | "rejected";
   created_by: string;
   created_at: string;
 }
@@ -161,6 +162,18 @@ export const expenseApi = {
 
   deleteMealExpense: async (expenseId: string): Promise<void> => {
     await apiClient.delete(`/expenses/meals/${expenseId}`);
+  },
+
+  approveMealExpense: async (expenseId: string, addDeposit: boolean): Promise<MealExpense> => {
+    const { data } = await apiClient.patch<MealExpense>(`/expenses/meals/${expenseId}/approve`, {
+      add_deposit: addDeposit,
+    });
+    return data;
+  },
+
+  rejectMealExpense: async (expenseId: string): Promise<MealExpense> => {
+    const { data } = await apiClient.patch<MealExpense>(`/expenses/meals/${expenseId}/reject`);
+    return data;
   },
 
   // ========== Home Rent ==========

@@ -42,7 +42,8 @@ interface ExpenseByCategory {
 }
 
 export function ReportsPage() {
-  const { isReady } = useRequireAuth();
+  const { user, isReady } = useRequireAuth();
+  const isManager = user?.role === "manager";
   const navigate = useNavigate();
   const [activeMonth, setActiveMonth] = useState<Month | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -123,7 +124,9 @@ export function ReportsPage() {
       .reduce((sum, d) => sum + d.amount, 0);
   };
 
-  const memberSummaries: MemberSummary[] = members.map((member) => {
+  const displayedMembers = isManager ? members : members.filter(m => m.user_id === user?.id);
+
+  const memberSummaries: MemberSummary[] = displayedMembers.map((member) => {
     const totalMeals = getMemberMeals(member.user_id);
     const mealCost = totalMeals * (mealSummary?.meal_rate || 0);
     const totalDeposits = getMemberDeposits(member.user_id);
