@@ -20,6 +20,7 @@ import { expenseApi, type HomeRentExpense, type UtilityExpense, type MemberSumma
 import { pdfService } from "../services/pdfService";
 import { memberService, type Member } from "../services/memberService";
 import { monthService, type Month } from "../services/monthService";
+import { formatCurrency } from "../utils/format.utils";
 
 
 
@@ -166,14 +167,6 @@ export function ReportsPage() {
     { category: "Utilities", amount: utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0), percentage: totalExpenses > 0 ? (utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0) / totalExpenses) * 100 : 0 },
   ].sort((a, b) => b.amount - a.amount);
 
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {

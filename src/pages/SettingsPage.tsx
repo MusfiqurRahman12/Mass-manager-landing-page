@@ -84,6 +84,7 @@ export function SettingsPage() {
     name: "",
     address: "",
     automatic_market_date: "",
+    currency: "BDT",
   });
 
   // Calculate next market day
@@ -138,6 +139,7 @@ export function SettingsPage() {
         name: messData.name,
         address: messData.address || "",
         automatic_market_date: messData.automatic_market_date || "Friday",
+        currency: messData.currency || "BDT",
       });
 
       // Load profile data from user
@@ -191,6 +193,14 @@ export function SettingsPage() {
     try {
       const updated = await messService.updateMess(formData);
       setMess(updated);
+      
+      // Also update the global currency formatting
+      if (updated.currency) {
+        import("../utils/format.utils").then(({ setGlobalCurrency }) => {
+          setGlobalCurrency(updated.currency as string);
+        });
+      }
+      
       toast.success("Settings saved successfully");
     } catch {
       toast.error("Failed to save settings");
@@ -649,6 +659,32 @@ export function SettingsPage() {
                   </p>
                 </div>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Currency
+              </label>
+              <select
+                value={formData.currency || "BDT"}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    currency: e.target.value,
+                  }))
+                }
+                disabled={!isManager}
+                className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+              >
+                <option value="BDT">BDT (৳) - Bangladeshi Taka</option>
+                <option value="INR">INR (₹) - Indian Rupee</option>
+                <option value="USD">USD ($) - US Dollar</option>
+                <option value="EUR">EUR (€) - Euro</option>
+                <option value="GBP">GBP (£) - British Pound</option>
+              </select>
+              <p className="text-xs text-neutral-500 mt-1">
+                Global currency used for all monetary values in the app
+              </p>
             </div>
 
             {isManager && (

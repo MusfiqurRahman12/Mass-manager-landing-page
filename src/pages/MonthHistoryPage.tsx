@@ -5,6 +5,7 @@ import { Badge, Button, Card, LoadingSpinner } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useRequireAuth } from "../hooks";
 import { type Month, monthService } from "../services/monthService";
+import { formatCurrency } from "../utils/format.utils";
 
 export function MonthHistoryPage() {
   const { isReady } = useRequireAuth();
@@ -46,14 +47,6 @@ export function MonthHistoryPage() {
   const getMonthName = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const getStatusBadge = (month: Month) => {

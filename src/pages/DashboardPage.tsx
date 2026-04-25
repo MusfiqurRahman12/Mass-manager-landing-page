@@ -183,57 +183,96 @@ export function DashboardPage() {
         {/* KPI Cards */}
         {isManager ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Total Meals</p>
-              <h3 className="text-3xl font-bold mb-2">{mealCost?.total_meal || 0}</h3>
-              <Badge variant="primary">Current Month</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                🍽️
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Meals</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{mealCost?.total_meal || 0}</h3>
+                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
+              </div>
             </Card>
 
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Meal Rate</p>
-              <h3 className="text-3xl font-bold mb-2">{formatCurrency(mealCost?.meal_rate || 0)}</h3>
-              <Badge variant="warning">Per Meal</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                💸
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Meal Rate</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(mealCost?.meal_rate || 0)}</h3>
+                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Per Meal</Badge>
+              </div>
             </Card>
 
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Total Expenses</p>
-              <h3 className="text-3xl font-bold mb-2">{formatCurrency(mealCost?.total_cost || 0)}</h3>
-              <Badge variant="success">Current Month</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                💰
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Expenses</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(mealCost?.total_cost || 0)}</h3>
+                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">Current Month</Badge>
+              </div>
             </Card>
 
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">Members</p>
-              <h3 className="text-3xl font-bold mb-2">{members.length}</h3>
-              <Badge variant="default">Active</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                👥
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Members</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{members.length}</h3>
+                <Badge variant="default" size="sm">Active</Badge>
+              </div>
             </Card>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Meals (Est.)</p>
-              <h3 className="text-3xl font-bold mb-2">
-                {/* To get exact meals we'd need to fetch meals or use a full summary endpoint. As a workaround, we just show meal rate. */}
-                {mealCost?.meal_rate ? "Rate: " + formatCurrency(mealCost.meal_rate) : 0}
-              </h3>
-              <Badge variant="primary">Current Month</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                🍽️
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Meals (Est.)</p>
+                <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 truncate">
+                  {mealCost?.meal_rate ? "Rate: " + formatCurrency(mealCost.meal_rate) : 0}
+                </h3>
+                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
+              </div>
             </Card>
 
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Rent Share</p>
-              <h3 className="text-3xl font-bold mb-2">{formatCurrency(memberSummary?.home_rent_share || 0)}</h3>
-              <Badge variant="warning">Home Rent</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                🏠
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Rent Share</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(memberSummary?.home_rent_share || 0)}</h3>
+                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Home Rent</Badge>
+              </div>
             </Card>
 
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Utility Share</p>
-              <h3 className="text-3xl font-bold mb-2">{formatCurrency(memberSummary?.utility_share || 0)}</h3>
-              <Badge variant="success">Utilities</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                ⚡
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Utility Share</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(memberSummary?.utility_share || 0)}</h3>
+                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">Utilities</Badge>
+              </div>
             </Card>
 
-            <Card className="text-center p-6">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-2">My Total Due Share</p>
-              <h3 className="text-3xl font-bold mb-2">{formatCurrency(memberSummary?.total_share || 0)}</h3>
-              <Badge variant="default">Rent + Utility</Badge>
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                🧾
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Total Due Share</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(memberSummary?.total_share || 0)}</h3>
+                <Badge variant="default" size="sm">Rent + Utility</Badge>
+              </div>
             </Card>
           </div>
         )}
@@ -241,14 +280,15 @@ export function DashboardPage() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Monthly Summary */}
-          <Card className="lg:col-span-2">
-            <div className="mb-4 pb-4 border-b border-neutral-200 dark:border-neutral-700">
+          <Card className="lg:col-span-2 border border-neutral-200/60 dark:border-neutral-800/60 shadow-sm">
+            <div className="mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">Monthly Summary</h2>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Monthly Summary</h2>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => navigate("/reports")}
+                  className="hidden sm:flex text-sm"
                 >
                   View Full Report
                 </Button>
@@ -256,73 +296,89 @@ export function DashboardPage() {
             </div>
 
             {activeMonth ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                    <p className="text-sm text-neutral-500 mb-1">
+                  <div className="p-5 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800/50 dark:to-neutral-800 rounded-xl border border-neutral-200/40 dark:border-neutral-700/40">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
                       Opening Balance
                     </p>
-                    <p className="text-xl font-semibold">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                       {formatCurrency(activeMonth.opening_balance)}
                     </p>
                   </div>
-                  <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                    <p className="text-sm text-neutral-500 mb-1">
+                  <div className="p-5 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800/50 dark:to-neutral-800 rounded-xl border border-neutral-200/40 dark:border-neutral-700/40">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
                       Closing Balance
                     </p>
-                    <p className="text-xl font-semibold">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                       {formatCurrency(activeMonth.closing_balance)}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
-                    <span className="text-neutral-600">Total Meals</span>
-                    <span className="font-medium">
+                <div className="bg-white dark:bg-neutral-900/50 rounded-xl border border-neutral-100 dark:border-neutral-800/80 divide-y divide-neutral-100 dark:divide-neutral-800/80">
+                  <div className="flex justify-between items-center p-4">
+                    <span className="text-neutral-600 dark:text-neutral-400">Total Meals Consumed</span>
+                    <span className="font-semibold text-neutral-900 dark:text-white">
                       {activeMonth.total_meal}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
-                    <span className="text-neutral-600">Total Cost</span>
-                    <span className="font-medium">
+                  <div className="flex justify-between items-center p-4">
+                    <span className="text-neutral-600 dark:text-neutral-400">Total Mess Cost</span>
+                    <span className="font-semibold text-neutral-900 dark:text-white">
                       {formatCurrency(activeMonth.total_cost)}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
-                    <span className="text-neutral-600">Meal Rate</span>
-                    <span className="font-medium">
+                  <div className="flex justify-between items-center p-4">
+                    <span className="text-neutral-600 dark:text-neutral-400">Current Meal Rate</span>
+                    <span className="font-semibold text-neutral-900 dark:text-white">
                       {formatCurrency(activeMonth.meal_rate)}
                     </span>
                   </div>
                 </div>
+                
+                <div className="sm:hidden mt-4">
+                   <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate("/reports")}
+                  >
+                    View Full Report
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-neutral-500">
+              <div className="text-center py-12 text-neutral-500">
+                <div className="text-4xl mb-3 opacity-20">📊</div>
                 <p>No active month data available</p>
               </div>
             )}
           </Card>
 
           {/* Quick Actions */}
-          <Card>
-            <div className="mb-4 pb-4 border-b border-neutral-200 dark:border-neutral-700">
-              <h2 className="text-xl font-bold">Quick Actions</h2>
+          <Card className="border border-neutral-200/60 dark:border-neutral-800/60 shadow-sm">
+            <div className="mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
+              <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Quick Actions</h2>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {[
-                { label: "Add Meal", path: "/meals", icon: "🍽️" },
-                { label: "Add Expense", path: "/expense-summary", icon: "💰" },
-                { label: "Add Deposit", path: "/deposits", icon: "💵" },
-                { label: "View Members", path: "/members", icon: "👥" },
+                { label: "Add Meal", path: "/meals", icon: "🍽️", color: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400" },
+                { label: "Add Expense", path: "/expense-summary", icon: "💰", color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" },
+                { label: "Add Deposit", path: "/deposits", icon: "💵", color: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" },
+                { label: "View Members", path: "/members", icon: "👥", color: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400" },
               ].map((action) => (
                 <button
                   key={action.label}
                   onClick={() => navigate(action.path)}
-                  className="w-full px-4 py-3 text-left rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors font-medium flex items-center gap-3"
+                  className="w-full p-3 text-left rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors font-medium flex items-center gap-4 group border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700"
                 >
-                  <span>{action.icon}</span>
-                  {action.label}
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-transform group-hover:scale-110 ${action.color}`}>
+                    {action.icon}
+                  </div>
+                  <span className="text-neutral-700 dark:text-neutral-200">{action.label}</span>
+                  <svg className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               ))}
             </div>

@@ -6,6 +6,8 @@ import {
   type ReactNode,
 } from "react";
 import { authService, type User } from "../services";
+import { messService } from "../services/messService";
+import { setGlobalCurrency } from "../utils/format.utils";
 
 interface AuthContextType {
   user: User | null;
@@ -50,6 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const userInfo = await authService.getCurrentUserInfo();
           setUser(userInfo);
+          
+          if (userInfo.mess_id) {
+            try {
+              const messData = await messService.getMess();
+              setGlobalCurrency(messData.currency);
+            } catch (err) {
+              console.error("Failed to fetch mess for currency:", err);
+            }
+          }
         } catch (error) {
           console.error("Failed to refresh user data:", error);
         }
@@ -66,6 +77,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authService.login({ email, password });
       const userInfo = await authService.getCurrentUserInfo();
       setUser(userInfo);
+      
+      if (userInfo.mess_id) {
+        try {
+          const messData = await messService.getMess();
+          setGlobalCurrency(messData.currency);
+        } catch (err) {
+          console.error("Failed to fetch mess for currency:", err);
+        }
+      }
+      
       return !!userInfo.mess_id;
     } finally {
       setIsLoading(false);

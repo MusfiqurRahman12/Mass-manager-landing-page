@@ -10,6 +10,7 @@ import { expenseApi, type HomeRentExpense, type UtilityExpense, type MemberSumma
 import { pdfService } from "../services/pdfService";
 import { memberService, type Member } from "../services/memberService";
 import { monthService, type Month } from "../services/monthService";
+import { formatCurrency } from "../utils/format.utils";
 
 
 
@@ -152,14 +153,6 @@ export function MonthDetailsPage() {
     } finally {
       setIsGeneratingPDF(false);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const getMonthName = (dateString: string) => {

@@ -6,6 +6,7 @@ export interface Mess {
   address: string;
   manager_id: string;
   automatic_market_date: string;
+  currency: string;
   created_at: string;
 }
 
@@ -13,6 +14,7 @@ export interface UpdateMessPayload {
   name?: string;
   address?: string;
   automatic_market_date?: string;
+  currency?: string;
 }
 
 export const messService = {

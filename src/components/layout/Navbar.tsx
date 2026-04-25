@@ -12,8 +12,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <nav className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-40 shadow-sm">
-      <div className="container-max flex items-center justify-between h-16 md:h-20">
+    <nav className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200/60 dark:border-neutral-800/60 sticky top-0 z-40">
+      <div className="container-max flex items-center justify-between h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">

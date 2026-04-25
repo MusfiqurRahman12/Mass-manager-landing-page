@@ -1,16 +1,46 @@
+export let globalCurrency = "BDT";
+
+export function setGlobalCurrency(currency: string) {
+  globalCurrency = currency;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("mess_currency", currency);
+  }
+}
+
+// Initialize from local storage if available
+if (typeof window !== "undefined") {
+  const stored = localStorage.getItem("mess_currency");
+  if (stored) {
+    globalCurrency = stored;
+  }
+}
+
 /**
- * Formats a number as currency (Indian Rupee)
+ * Formats a number as currency using the global currency setting
  */
 export function formatCurrency(
   amount: number,
-  currency: string = "INR",
+  currency: string = globalCurrency,
 ): string {
-  return new Intl.NumberFormat("en-IN", {
+  let locale = "en-US";
+  if (currency === "BDT") locale = "en-BD";
+  else if (currency === "INR") locale = "en-IN";
+  else if (currency === "EUR") locale = "de-DE";
+  else if (currency === "GBP") locale = "en-GB";
+
+  const formatted = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(amount);
+
+  // Force the Taka symbol if BDT (some browsers show 'BDT' instead of '৳' by default)
+  // if (currency === "BDT") {
+  //   return formatted.replace("BDT", "৳").replace("bdt", "৳");
+  // }
+
+  return formatted;
 }
 
 /**
