@@ -1,7 +1,7 @@
 import {
   Navigate,
   Route,
-  HashRouter as Router,
+  BrowserRouter as Router,
   Routes,
 } from "react-router-dom";
 import { Toaster } from "sonner";
