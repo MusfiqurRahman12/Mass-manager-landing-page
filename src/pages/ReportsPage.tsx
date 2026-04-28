@@ -107,7 +107,7 @@ export function ReportsPage() {
 
 
     } catch (error) {
-      toast.error("Failed to load report data");
+      toast.error(error instanceof Error ? error.message : "Failed to load report data");
     } finally {
       setIsLoading(false);
     }
@@ -200,7 +200,7 @@ export function ReportsPage() {
       pdfService.triggerDownload(blob, `mess_statement_${monthName}.pdf`);
       toast.success("PDF downloaded successfully");
     } catch (error) {
-      toast.error("Failed to download PDF");
+      toast.error(error instanceof Error ? error.message : "Failed to download PDF");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -229,7 +229,7 @@ export function ReportsPage() {
       );
       toast.success("Member statement downloaded");
     } catch (error) {
-      toast.error("Failed to download member statement");
+      toast.error(error instanceof Error ? error.message : "Failed to download member statement");
     } finally {
       setIsGeneratingPDF(false);
     }

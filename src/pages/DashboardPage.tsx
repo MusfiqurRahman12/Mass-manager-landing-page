@@ -69,7 +69,7 @@ export function DashboardPage() {
         setNextMonthDate(`${year}-${month}-01`);
       }
     } catch (error) {
-      toast.error("Failed to load dashboard data");
+      toast.error(error instanceof Error ? error.message : "Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }

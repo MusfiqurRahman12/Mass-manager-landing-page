@@ -46,7 +46,7 @@ export function ExpenseSummaryPage() {
       setTotals(totalsData);
       setMealExpenses(mealData);
     } catch (error) {
-      toast.error("Failed to load expense summary");
+      toast.error(error instanceof Error ? error.message : "Failed to load expense summary");
       console.error(error);
     } finally {
       setIsLoading(false);

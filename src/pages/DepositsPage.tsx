@@ -92,7 +92,7 @@ export function DepositsPage() {
         })),
       );
     } catch (error) {
-      toast.error("Failed to load deposit data");
+      toast.error(error instanceof Error ? error.message : "Failed to load deposit data");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -251,7 +251,7 @@ export function DepositsPage() {
           note: "",
         });
       } catch (error) {
-        toast.error("Failed to add deposit");
+        toast.error(error instanceof Error ? error.message : "Failed to add deposit");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -290,7 +290,7 @@ export function DepositsPage() {
         setIsEditModalOpen(false);
         setSelectedDeposit(null);
       } catch (error) {
-        toast.error("Failed to update deposit");
+        toast.error(error instanceof Error ? error.message : "Failed to update deposit");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -332,7 +332,7 @@ export function DepositsPage() {
       setIsDeleteModalOpen(false);
       setDepositToDelete(null);
     } catch (error) {
-      toast.error("Failed to delete deposit");
+      toast.error(error instanceof Error ? error.message : "Failed to delete deposit");
       console.error(error);
     }
   };

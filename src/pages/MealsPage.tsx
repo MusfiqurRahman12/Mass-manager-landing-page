@@ -94,7 +94,7 @@ export function MealsPage() {
       setMembers(membersData);
       setMealCost(costData);
     } catch (error) {
-      toast.error("Failed to load meal data");
+      toast.error(error instanceof Error ? error.message : "Failed to load meal data");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -205,7 +205,7 @@ export function MealsPage() {
           meal_count: values.meal_count,
         });
       } catch (error) {
-        toast.error("Failed to add meal");
+        toast.error(error instanceof Error ? error.message : "Failed to add meal");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -236,7 +236,7 @@ export function MealsPage() {
         setIsEditModalOpen(false);
         setSelectedMeal(null);
       } catch (error) {
-        toast.error("Failed to update meal");
+        toast.error(error instanceof Error ? error.message : "Failed to update meal");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -266,7 +266,7 @@ export function MealsPage() {
         await fetchData();
         setIsCostModalOpen(false);
       } catch (error) {
-        toast.error("Failed to update meal cost");
+        toast.error(error instanceof Error ? error.message : "Failed to update meal cost");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -303,7 +303,7 @@ export function MealsPage() {
       setIsDeleteModalOpen(false);
       setMealToDelete(null);
     } catch (error) {
-      toast.error("Failed to delete meal");
+      toast.error(error instanceof Error ? error.message : "Failed to delete meal");
       console.error(error);
     }
   };

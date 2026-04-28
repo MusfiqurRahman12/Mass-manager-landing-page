@@ -34,7 +34,7 @@ export function MonthHistoryPage() {
       setHasMore(data.length === limit);
       setOffset(newOffset);
     } catch (error) {
-      toast.error("Failed to load month history");
+      toast.error(error instanceof Error ? error.message : "Failed to load month history");
     } finally {
       setIsLoading(false);
     }

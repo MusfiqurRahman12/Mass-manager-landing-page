@@ -81,7 +81,7 @@ export function HomeRentExpensePage() {
       setMembers(membersData.filter(m => m.is_active));
       setRentExpenses(rentData);
     } catch (error) {
-      toast.error("Failed to load home rent data");
+      toast.error(error instanceof Error ? error.message : "Failed to load home rent data");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -170,7 +170,7 @@ export function HomeRentExpensePage() {
         rentForm.resetForm();
         setIsPreviewModalOpen(false);
       } catch (error) {
-        toast.error("Failed to add home rent");
+        toast.error(error instanceof Error ? error.message : "Failed to add home rent");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -220,7 +220,7 @@ export function HomeRentExpensePage() {
       });
       setIsPreviewModalOpen(true);
     } catch (error) {
-      toast.error("Failed to preview rent division");
+      toast.error(error instanceof Error ? error.message : "Failed to preview rent division");
       console.error(error);
     }
   };
@@ -243,7 +243,7 @@ export function HomeRentExpensePage() {
       setIsDeleteModalOpen(false);
       setExpenseToDelete(null);
     } catch (error) {
-      toast.error("Failed to delete home rent");
+      toast.error(error instanceof Error ? error.message : "Failed to delete home rent");
       console.error(error);
     }
   };

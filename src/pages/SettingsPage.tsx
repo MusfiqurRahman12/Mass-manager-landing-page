@@ -169,8 +169,8 @@ export function SettingsPage() {
 
       // Load pending transfer requests
       await loadPendingTransfers();
-    } catch {
-      toast.error("Failed to load settings");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to load settings");
     } finally {
       setIsLoading(false);
     }
@@ -202,8 +202,8 @@ export function SettingsPage() {
       }
       
       toast.success("Settings saved successfully");
-    } catch {
-      toast.error("Failed to save settings");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save settings");
     } finally {
       setIsSaving(false);
     }
@@ -281,8 +281,8 @@ export function SettingsPage() {
       toast.success("Mess deleted successfully");
       logout();
       navigate("/");
-    } catch {
-      toast.error("Failed to delete mess");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete mess");
     }
   };
 

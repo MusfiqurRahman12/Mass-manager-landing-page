@@ -104,7 +104,7 @@ export function NotificationBell() {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      toast.error("Failed to mark as read");
+      toast.error(error instanceof Error ? error.message : "Failed to mark as read");
     }
   };
 
@@ -116,7 +116,7 @@ export function NotificationBell() {
       setUnreadCount(0);
       toast.success("All notifications marked as read");
     } catch (error) {
-      toast.error("Failed to mark all as read");
+      toast.error(error instanceof Error ? error.message : "Failed to mark all as read");
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +132,7 @@ export function NotificationBell() {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
-      toast.error("Failed to delete notification");
+      toast.error(error instanceof Error ? error.message : "Failed to delete notification");
     }
   };
 

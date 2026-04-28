@@ -61,7 +61,7 @@ export function MembersPage() {
       const data = await memberService.getMembers();
       setMembers(data);
     } catch (error) {
-      toast.error("Failed to load members");
+      toast.error(error instanceof Error ? error.message : "Failed to load members");
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +141,7 @@ export function MembersPage() {
       setMemberToRemove(null);
       loadMembers();
     } catch (error) {
-      toast.error("Failed to remove member");
+      toast.error(error instanceof Error ? error.message : "Failed to remove member");
     } finally {
       setIsRemoving(false);
     }

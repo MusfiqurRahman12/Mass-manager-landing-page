@@ -85,7 +85,7 @@ export function MonthDetailsPage() {
       setMemberExpenseSummaries(expenseSummary.member_summaries);
       setDeposits(depositsData);
     } catch (error) {
-      toast.error("Failed to load month details");
+      toast.error(error instanceof Error ? error.message : "Failed to load month details");
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +149,7 @@ export function MonthDetailsPage() {
       await pdfService.downloadMonthPDF(monthId);
       toast.success("PDF downloaded successfully");
     } catch (error) {
-      toast.error("Failed to download PDF");
+      toast.error(error instanceof Error ? error.message : "Failed to download PDF");
     } finally {
       setIsGeneratingPDF(false);
     }
