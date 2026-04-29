@@ -5,6 +5,7 @@ export { Button } from "./Button";
 export { Card, CardBody, CardFooter, CardHeader } from "./Card";
 export { DatePicker } from "./DatePicker";
 export { ErrorBoundary } from "./ErrorBoundary";
+export { FloatingChatButton } from "./FloatingChatButton";
 export { Input } from "./Input";
 export { LoadingSpinner, Spinner } from "./Loader";
 export { Modal, ModalHeader, ModalBody, ModalFooter } from "./Modal";

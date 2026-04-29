@@ -348,12 +348,12 @@ export function UtilityExpensesPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <Card>
             <CardBody className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-primary">
-                  <Zap className="h-5 w-5" />
+                  <Calculator className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -371,7 +371,7 @@ export function UtilityExpensesPage() {
             </CardBody>
           </Card>
 
-          {UTILITY_OPTIONS.slice(0, 4).map((util) => {
+          {UTILITY_OPTIONS.map((util) => {
             const Icon = util.icon;
             const amount = categoryTotals[util.value] || 0;
             return (
@@ -382,7 +382,7 @@ export function UtilityExpensesPage() {
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
                         {util.label}
                       </p>
                       <div className="text-xl font-bold text-neutral-900 dark:text-white">

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Badge, Button, Card, LoadingSpinner } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useRequireAuth } from "../hooks";
+import { useAuth } from "../context";
 import { depositService, type Deposit } from "../services/depositService";
 import { mealService, type Meal } from "../services/mealService";
 import { expenseApi, type HomeRentExpense, type UtilityExpense, type MemberSummary as ExpenseMemberSummary, type MealExpense } from "../services/expenseApi";
@@ -11,6 +12,7 @@ import { pdfService } from "../services/pdfService";
 import { memberService, type Member } from "../services/memberService";
 import { monthService, type Month } from "../services/monthService";
 import { formatCurrency } from "../utils/format.utils";
+
 
 
 
@@ -258,7 +260,7 @@ export function MonthDetailsPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <p className="text-sm text-neutral-500 mb-1">Total Cost</p>
+            <p className="text-sm text-neutral-500 mb-1">Total Meal Cost</p>
             <p className="text-2xl font-bold">
               {formatCurrency(month.total_cost)}
             </p>
@@ -359,32 +361,21 @@ export function MonthDetailsPage() {
                   </tr>
                 ))}
               </tbody>
+              {isManager && (
               <tfoot className="bg-neutral-50 dark:bg-neutral-800 font-medium">
                 <tr>
                   <td className="px-6 py-4">Total</td>
                   <td className="px-6 py-4 text-right">{month.total_meal}</td>
-                  <td className="px-6 py-4 text-right">
-                    {formatCurrency(totalMealCost)}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {formatCurrency(rentExpenses.reduce((sum, e) => sum + e.total_amount, 0))}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {formatCurrency(utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0))}
-                  </td>
-                  <td className="px-6 py-4 text-right text-success">
-                    {formatCurrency(totalDepositsSum)}
-                  </td>
-                  <td
-                    className={`px-6 py-4 text-right ${
-                      totalDepositsSum - totalExpenses >= 0 ? "text-success" : "text-error"
-                    }`}
-                  >
+                  <td className="px-6 py-4 text-right">{formatCurrency(totalMealCost)}</td>
+                  <td className="px-6 py-4 text-right">{formatCurrency(rentExpenses.reduce((sum, e) => sum + e.total_amount, 0))}</td>
+                  <td className="px-6 py-4 text-right">{formatCurrency(utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0))}</td>
+                  <td className="px-6 py-4 text-right text-success">{formatCurrency(totalDepositsSum)}</td>
+                  <td className={`px-6 py-4 text-right ${totalDepositsSum - totalExpenses >= 0 ? "text-success" : "text-error"}`}>
                     {formatCurrency(totalDepositsSum - totalExpenses)}
                   </td>
-
                 </tr>
               </tfoot>
+              )}
 
             </table>
           </div>

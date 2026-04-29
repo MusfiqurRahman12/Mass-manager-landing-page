@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FloatingChatButton, } from "../common";
 import { Navbar, Sidebar } from "./";
 
 interface MainLayoutProps {
@@ -26,6 +27,8 @@ export function MainLayout({ children, showSidebar = true }: MainLayoutProps) {
           </footer>
         </main>
       </div>
+      {/* Floating chat button visible on all authenticated pages */}
+      <FloatingChatButton />
     </div>
   );
 }

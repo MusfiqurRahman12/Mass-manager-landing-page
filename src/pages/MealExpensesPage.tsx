@@ -376,71 +376,60 @@ export function MealExpensesPage() {
         </div>
 
         {/* Add Expense Form */}
-        <Card>
-            <CardHeader className="pb-4">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Add Meal Expense
-              </h2>
-            </CardHeader>
-            <CardBody>
-              <form onSubmit={addForm.handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-4 border-b border-primary/10">
+            <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add Meal Expense
+            </h2>
+          </CardHeader>
+          <CardBody className="pt-6">
+            <form onSubmit={addForm.handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-4">
                   <Input
-                    label="Amount"
+                    label="Amount (BDT)"
                     type="number"
                     step="0.01"
                     min="0"
-                    placeholder="Enter amount"
+                    placeholder="0.00"
                     value={addForm.values.amount}
                     onChange={addForm.handleChange}
                     onBlur={addForm.handleBlur}
                     name="amount"
-                    error={
-                      addForm.touched.amount
-                        ? addForm.errors.amount
-                        : undefined
-                    }
+                    error={addForm.touched.amount ? addForm.errors.amount : undefined}
                   />
                   <DatePicker
-                    label="Date"
+                    label="Expense Date"
                     value={addForm.values.expense_date}
-                    onChange={(date) =>
-                      addForm.setValues({
-                        ...addForm.values,
-                        expense_date: date,
-                      })
-                    }
-                    error={
-                      addForm.touched.expense_date
-                        ? addForm.errors.expense_date
-                        : undefined
-                    }
+                    onChange={(date) => addForm.setValues({ ...addForm.values, expense_date: date })}
+                    error={addForm.touched.expense_date ? addForm.errors.expense_date : undefined}
                   />
+                </div>
+
+                <div className="space-y-4">
                   <Input
                     label="Description"
-                    placeholder="What did you buy?"
+                    placeholder="e.g., Grocery shopping"
                     value={addForm.values.description}
                     onChange={addForm.handleChange}
                     onBlur={addForm.handleBlur}
                     name="description"
-                    error={
-                      addForm.touched.description
-                        ? addForm.errors.description
-                        : undefined
-                    }
+                    error={addForm.touched.description ? addForm.errors.description : undefined}
                   />
-                  {isManager ? (
-                    <div className="flex flex-col gap-1.5">
+                  
+                  {isManager && (
+                    <div className="space-y-1.5">
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                        Member
+                        Spent By
                       </label>
                       <select
-                        className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm text-neutral-900 dark:text-white"
+                        className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm text-neutral-900 dark:text-white transition-all"
                         value={addForm.values.member_id}
                         onChange={addForm.handleChange}
                         name="member_id"
                       >
-                        <option value="">Myself (Default)</option>
+                        <option value="">Myself (Manager)</option>
                         {members.map((m) => (
                           <option key={m.user_id} value={m.user_id}>
                             {m.full_name}
@@ -448,52 +437,48 @@ export function MealExpensesPage() {
                         ))}
                       </select>
                     </div>
-                  ) : (
-                    <div className="flex items-end">
-                      <Button
-                        type="submit"
-                        isLoading={isSubmitting}
-                        className="w-full"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Expense
-                      </Button>
-                    </div>
-                  )}
-                  {isManager && (
-                    <>
-                      <div className="lg:col-span-3 flex items-center">
-                        {addForm.values.member_id && (
-                          <label className="flex items-center gap-2 cursor-pointer mt-2">
-                            <input
-                              type="checkbox"
-                              name="add_deposit"
-                              checked={addForm.values.add_deposit}
-                              onChange={(e) => addForm.setValues({ ...addForm.values, add_deposit: e.target.checked })}
-                              className="w-4 h-4 text-primary bg-neutral-100 border-neutral-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
-                            />
-                            <span className="text-sm text-neutral-700 dark:text-neutral-300">
-                              Add this amount to member's deposit
-                            </span>
-                          </label>
-                        )}
-                      </div>
-                      <div className="flex items-end">
-                        <Button
-                          type="submit"
-                          isLoading={isSubmitting}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Expense
-                        </Button>
-                      </div>
-                    </>
                   )}
                 </div>
-              </form>
-            </CardBody>
-          </Card>
+
+                <div className="flex flex-col justify-between gap-4">
+                  <div className="flex-1">
+                    {isManager && addForm.values.member_id && (
+                      <div className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-2">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="add_deposit"
+                            checked={addForm.values.add_deposit}
+                            onChange={(e) => addForm.setValues({ ...addForm.values, add_deposit: e.target.checked })}
+                            className="w-5 h-5 mt-0.5 text-primary bg-neutral-100 border-neutral-300 rounded-md focus:ring-primary dark:focus:ring-primary dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600 transition-all"
+                          />
+                          <div className="space-y-0.5">
+                            <span className="text-sm font-bold text-neutral-900 dark:text-white">
+                              Add as Deposit
+                            </span>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              Member will be credited for this amount automatically.
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    isLoading={isSubmitting}
+                    className="w-full py-6 text-lg font-bold shadow-lg shadow-primary/20"
+                    variant="primary"
+                  >
+                    <Plus className="h-6 w-6 mr-2" />
+                    Record Expense
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
 
         {/* Expense List */}
         <Card>
