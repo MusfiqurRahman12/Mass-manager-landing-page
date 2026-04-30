@@ -8,7 +8,7 @@ import {
 
 const ADMIN_TOKEN_KEY = "admin_token";
 const ADMIN_USER_KEY = "admin_user";
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 export interface AdminUser {
   id: string;
@@ -48,7 +48,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const adminLogin = async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE}/api/v1/admin/auth/login`, {
+    const res = await fetch(`${API_BASE}/admin/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
