@@ -155,6 +155,13 @@ export function DepositsPage() {
     return deposits.reduce((sum, d) => sum + d.amount, 0);
   }, [deposits]);
 
+  const myTotalDeposits = useMemo(() => {
+    if (!user) return 0;
+    return deposits
+      .filter((d) => d.member_id === user.id)
+      .reduce((sum, d) => sum + d.amount, 0);
+  }, [deposits, user]);
+
 
   const currentBalance = useMemo(() => {
     return totalDeposits - (mealCost?.total_cost || 0);
@@ -365,13 +372,13 @@ export function DepositsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Deposits
+                    {isManager ? "Total Deposits" : "My Total Deposits"}
                   </p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-20" />
                     ) : (
-                      formatCurrency(totalDeposits)
+                      formatCurrency(isManager ? totalDeposits : myTotalDeposits)
                     )}
                   </div>
                 </div>
@@ -542,24 +549,7 @@ export function DepositsPage() {
           </Card>
         )}
 
-        {/* Member-specific: Your Total Deposits card */}
-        {!isManager && (
-          <Card>
-            <CardBody className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-4 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-600">
-                  <Wallet className="h-8 w-8" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Your Total Deposits</p>
-                  <p className="text-3xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? <Skeleton className="h-9 w-24" /> : formatCurrency(deposits.filter(d => d.member_id === user?.id).reduce((sum, d) => sum + d.amount, 0))}
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
+
 
         {/* Member Balance Summary — Manager only */}
         {isManager && (

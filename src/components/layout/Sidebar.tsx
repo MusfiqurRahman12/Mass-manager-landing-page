@@ -65,6 +65,7 @@ const expenseNavGroup = {
       label: "Summary",
       icon: <BarChart3 className="w-4 h-4" />,
       path: "/expense-summary",
+      managerOnly: true,
     },
     {
       label: "Meal Expenses",

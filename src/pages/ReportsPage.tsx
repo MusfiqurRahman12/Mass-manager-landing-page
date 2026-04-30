@@ -151,6 +151,8 @@ export function ReportsPage() {
 
 
   const totalMeals = memberSummaries.reduce((sum, m) => sum + m.totalMeals, 0);
+  // Always show all-members total meals from the API summary
+  const allMembersTotalMeals = mealSummary?.total_meals || 0;
   const totalDeposits = memberSummaries.reduce(
     (sum, m) => sum + m.totalDeposits,
     0,
@@ -305,7 +307,7 @@ export function ReportsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="text-center p-6">
                 <p className="text-neutral-500 text-sm mb-2">Total Meals</p>
-                <h3 className="text-3xl font-bold mb-2">{totalMeals}</h3>
+                <h3 className="text-3xl font-bold mb-2">{allMembersTotalMeals}</h3>
                 <Badge variant="primary">All Members</Badge>
               </Card>
 
@@ -317,13 +319,15 @@ export function ReportsPage() {
                 <Badge variant="warning">Per Meal</Badge>
               </Card>
 
-              <Card className="text-center p-6">
-                <p className="text-neutral-500 text-sm mb-2">Total Expenses</p>
-                <h3 className="text-3xl font-bold mb-2">
-                  {formatCurrency(totalExpenses)}
-                </h3>
-                <Badge variant="error">Costs</Badge>
-              </Card>
+              {isManager && (
+                <Card className="text-center p-6">
+                  <p className="text-neutral-500 text-sm mb-2">Total Expenses</p>
+                  <h3 className="text-3xl font-bold mb-2">
+                    {formatCurrency(totalExpenses)}
+                  </h3>
+                  <Badge variant="error">Costs</Badge>
+                </Card>
+              )}
 
               <Card className="text-center p-6">
                 <p className="text-neutral-500 text-sm mb-2">Meal Expenses</p>

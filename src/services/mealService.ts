@@ -15,6 +15,13 @@ export interface AddMealPayload {
   meal_count: number;
 }
 
+export interface AddMealBatchPayload {
+  member_id?: string;
+  meal_date: string;
+  end_date?: string;
+  meal_count: number;
+}
+
 export interface UpdateMealPayload {
   meal_count: number;
 }
@@ -43,6 +50,12 @@ export const mealService = {
   // Add meal entry
   addMeal: async (payload: AddMealPayload): Promise<Meal> => {
     const { data } = await apiClient.post<Meal>("/meals", payload);
+    return data;
+  },
+
+  // Add meal batch (multiple dates/members)
+  addMealBatch: async (payload: AddMealBatchPayload): Promise<{ message: string }> => {
+    const { data } = await apiClient.post<{ message: string }>("/meals/batch", payload);
     return data;
   },
 

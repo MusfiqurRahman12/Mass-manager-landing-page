@@ -537,47 +537,49 @@ export function MonthDetailsPage() {
           </div>
         </Card>
 
-        {/* Expense Breakdown */}
-        <Card className="overflow-hidden">
-          <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 className="text-xl font-semibold">Expense Breakdown</h2>
-          </div>
-          <div className="p-6">
-            {expensesByCategory.length === 0 ? (
-              <p className="text-neutral-500 text-center py-8">
-                No expenses recorded
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {expensesByCategory.map((expense) => (
-                  <div key={expense.category}>
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium">
-                        {getCategoryLabel(expense.category)}
-                      </span>
-                      <span className="text-neutral-600 dark:text-neutral-400">
-                        {formatCurrency(expense.amount)} (
-                        {expense.percentage.toFixed(1)}%)
-                      </span>
+        {/* Expense Breakdown — Manager only */}
+        {isManager && (
+          <Card className="overflow-hidden">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-xl font-semibold">Expense Breakdown</h2>
+            </div>
+            <div className="p-6">
+              {expensesByCategory.length === 0 ? (
+                <p className="text-neutral-500 text-center py-8">
+                  No expenses recorded
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {expensesByCategory.map((expense) => (
+                    <div key={expense.category}>
+                      <div className="flex justify-between mb-1">
+                        <span className="font-medium">
+                          {getCategoryLabel(expense.category)}
+                        </span>
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          {formatCurrency(expense.amount)} (
+                          {expense.percentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${expense.percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${expense.percentage}%` }}
-                      />
+                  ))}
+                  <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                    <div className="flex justify-between font-semibold">
+                      <span>Total Expenses</span>
+                      <span>{formatCurrency(totalExpenses)}</span>
                     </div>
-                  </div>
-                ))}
-                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <div className="flex justify-between font-semibold">
-                    <span>Total Expenses</span>
-                    <span>{formatCurrency(totalExpenses)}</span>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </Card>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Recent Transactions */}
         <Card className="overflow-hidden">

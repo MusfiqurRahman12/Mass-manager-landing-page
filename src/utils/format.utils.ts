@@ -36,9 +36,9 @@ export function formatCurrency(
   }).format(amount);
 
   // Force the Taka symbol if BDT (some browsers show 'BDT' instead of '৳' by default)
-  // if (currency === "BDT") {
-  //   return formatted.replace("BDT", "৳").replace("bdt", "৳");
-  // }
+  if (currency === "BDT") {
+    return formatted.replace("BDT", "৳").replace("bdt", "৳");
+  }
 
   return formatted;
 }

@@ -38,6 +38,7 @@ import { formatCurrency, formatNumber } from "../utils/format.utils";
 interface MealFormValues {
   member_id: string;
   meal_date: string;
+  end_date: string;
   meal_count: string;
 }
 
@@ -46,16 +47,6 @@ interface MealCostFormValues {
 }
 
 // Constants
-const MEAL_OPTIONS = [
-  { value: "0", label: "0 meals" },
-  { value: "0.5", label: "0.5 meals" },
-  { value: "1", label: "1 meal" },
-  { value: "1.5", label: "1.5 meals" },
-  { value: "2", label: "2 meals" },
-  { value: "2.5", label: "2.5 meals" },
-  { value: "3", label: "3 meals" },
-];
-
 const ITEMS_PER_PAGE = 10;
 
 export function MealsPage() {
@@ -157,12 +148,16 @@ export function MealsPage() {
     initialValues: {
       member_id: "",
       meal_date: format(new Date(), "yyyy-MM-dd"),
+      end_date: "",
       meal_count: "1",
     },
     validate: (values) => {
       const errors: Record<string, string> = {};
-      if (!values.member_id) errors.member_id = "Please select a member";
+      if (!isBulkMode && !values.member_id) errors.member_id = "Please select a member";
       if (!values.meal_date) errors.meal_date = "Please select a date";
+      if (values.end_date && values.end_date < values.meal_date) {
+        errors.end_date = "End date must be after start date";
+      }
       if (!values.meal_count) errors.meal_count = "Please enter meal count";
       const count = parseFloat(values.meal_count);
       if (isNaN(count) || count < 0 || count > 10) {
@@ -177,31 +172,25 @@ export function MealsPage() {
       }
       setIsSubmitting(true);
       try {
-        if (isBulkMode) {
-          // Add meals for all members
-          await Promise.all(
-            members.map((member) =>
-              mealService.addMeal({
-                member_id: member.user_id,
-                meal_date: values.meal_date,
-                meal_count: parseFloat(values.meal_count),
-              }),
-            ),
-          );
-          toast.success(`Meals added for all ${members.length} members`);
-        } else {
-          await mealService.addMeal({
-            member_id: values.member_id,
-            meal_date: values.meal_date,
-            meal_count: parseFloat(values.meal_count),
-          });
-          toast.success("Meal added successfully");
-        }
+        await mealService.addMealBatch({
+          member_id: isBulkMode ? undefined : values.member_id,
+          meal_date: values.meal_date,
+          end_date: values.end_date || undefined,
+          meal_count: parseFloat(values.meal_count),
+        });
+
+        toast.success(
+          isBulkMode
+            ? "Meals added successfully for all members"
+            : "Meal added successfully"
+        );
+
         await fetchData();
         mealForm.resetForm();
         mealForm.setValues({
           member_id: isBulkMode ? "" : values.member_id,
           meal_date: values.meal_date,
+          end_date: "",
           meal_count: values.meal_count,
         });
       } catch (error) {
@@ -325,6 +314,13 @@ export function MealsPage() {
     return meals.filter((m) => m.meal_date === today).length;
   }, [meals]);
 
+  const myTotalMeals = useMemo(() => {
+    if (!user) return 0;
+    return meals
+      .filter((m) => m.member_id === user.id)
+      .reduce((sum, m) => sum + m.meal_count, 0);
+  }, [meals, user]);
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -347,7 +343,25 @@ export function MealsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card>
+            <CardBody className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600">
+                  <Utensils className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    My Total Meals
+                  </p>
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatNumber(myTotalMeals)}
+                  </div>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
           <Card>
             <CardBody className="p-4">
               <div className="flex items-center gap-3">
@@ -509,22 +523,37 @@ export function MealsPage() {
                         : undefined
                     }
                   />
-                  <Select
-                    label="Meal Count"
-                    placeholder="Select meal count"
-                    value={mealForm.values.meal_count}
-                    onChange={(value) =>
+                  <DatePicker
+                    label="End Date (Optional)"
+                    value={mealForm.values.end_date}
+                    onChange={(date) =>
                       mealForm.setValues({
                         ...mealForm.values,
-                        meal_count: value,
+                        end_date: date,
                       })
                     }
+                    error={
+                      mealForm.touched.end_date
+                        ? mealForm.errors.end_date
+                        : undefined
+                    }
+                  />
+                  <Input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="10"
+                    label="Meal Count"
+                    placeholder="Enter meal count"
+                    name="meal_count"
+                    value={mealForm.values.meal_count}
+                    onChange={mealForm.handleChange}
+                    onBlur={mealForm.handleBlur}
                     error={
                       mealForm.touched.meal_count
                         ? mealForm.errors.meal_count
                         : undefined
                     }
-                    options={MEAL_OPTIONS}
                   />
                   <div className="flex items-end">
                     <Button
@@ -551,16 +580,18 @@ export function MealsPage() {
               </h2>
               {/* Filters */}
               <div className="flex flex-wrap gap-2">
-                <Select
-                  placeholder="Filter by member"
-                  value={filterMember}
-                  onChange={setFilterMember}
-                  options={[
-                    { value: "", label: "All Members" },
-                    ...memberOptions,
-                  ]}
-                  className="w-40"
-                />
+                {isManager && (
+                  <Select
+                    placeholder="Filter by member"
+                    value={filterMember}
+                    onChange={setFilterMember}
+                    options={[
+                      { value: "", label: "All Members" },
+                      ...memberOptions,
+                    ]}
+                    className="w-40"
+                  />
+                )}
                 <DatePicker
                   placeholder="Start date"
                   value={filterStartDate}
@@ -740,18 +771,21 @@ export function MealsPage() {
       >
         <ModalBody>
           <form id="edit-form" onSubmit={editForm.handleSubmit}>
-            <Select
+            <Input
+              type="number"
+              step="0.5"
+              min="0"
+              max="10"
               label="Meal Count"
+              name="meal_count"
               value={editForm.values.meal_count}
-              onChange={(value) =>
-                editForm.setValues({ ...editForm.values, meal_count: value })
-              }
+              onChange={editForm.handleChange}
+              onBlur={editForm.handleBlur}
               error={
                 editForm.touched.meal_count
                   ? editForm.errors.meal_count
                   : undefined
               }
-              options={MEAL_OPTIONS}
             />
           </form>
         </ModalBody>

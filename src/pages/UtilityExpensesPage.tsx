@@ -55,37 +55,37 @@ const UTILITY_OPTIONS: {
   icon: React.ElementType;
   color: string;
 }[] = [
-  {
-    value: "electricity",
-    label: "Electricity",
-    icon: Zap,
-    color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30",
-  },
-  {
-    value: "gas",
-    label: "Gas",
-    icon: Flame,
-    color: "text-orange-500 bg-orange-100 dark:bg-orange-900/30",
-  },
-  {
-    value: "water",
-    label: "Water",
-    icon: Droplets,
-    color: "text-blue-400 bg-blue-50 dark:bg-blue-900/20",
-  },
-  {
-    value: "internet",
-    label: "Internet",
-    icon: Wifi,
-    color: "text-green-500 bg-green-100 dark:bg-green-900/30",
-  },
-  {
-    value: "other",
-    label: "Other",
-    icon: MoreHorizontal,
-    color: "text-gray-500 bg-gray-100 dark:bg-gray-900/30",
-  },
-];
+    {
+      value: "electricity",
+      label: "Electricity",
+      icon: Zap,
+      color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30",
+    },
+    {
+      value: "gas",
+      label: "Gas",
+      icon: Flame,
+      color: "text-orange-500 bg-orange-100 dark:bg-orange-900/30",
+    },
+    {
+      value: "water",
+      label: "Water",
+      icon: Droplets,
+      color: "text-blue-400 bg-blue-50 dark:bg-blue-900/20",
+    },
+    {
+      value: "internet",
+      label: "Internet",
+      icon: Wifi,
+      color: "text-green-500 bg-green-100 dark:bg-green-900/30",
+    },
+    {
+      value: "other",
+      label: "Other",
+      icon: MoreHorizontal,
+      color: "text-gray-500 bg-gray-100 dark:bg-gray-900/30",
+    },
+  ];
 
 const ITEMS_PER_PAGE = 10;
 
@@ -138,7 +138,7 @@ export function UtilityExpensesPage() {
     if (members.length > 0) {
       const initialShares: Record<string, { amount: string; percentage: string }> = {};
       const equalPercentage = (100 / members.length).toFixed(2);
-      
+
       members.forEach(member => {
         initialShares[member.user_id] = {
           amount: "",
@@ -349,52 +349,44 @@ export function UtilityExpensesPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-primary">
-                  <Calculator className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Utilities
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      formatCurrency(totalUtilities)
-                    )}
-                  </div>
+          <Card className="relative overflow-hidden">
+            <CardBody className="p-4 relative z-10">
+              <div className="flex flex-col">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Total Utilities
+                </p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white truncate" title={formatCurrency(totalUtilities)}>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-20" />
+                  ) : (
+                    formatCurrency(totalUtilities)
+                  )}
                 </div>
               </div>
             </CardBody>
+            <Calculator className="absolute -bottom-2 -right-2 h-16 w-16 text-primary opacity-10" />
           </Card>
 
           {UTILITY_OPTIONS.map((util) => {
             const Icon = util.icon;
             const amount = categoryTotals[util.value] || 0;
             return (
-              <Card key={util.value}>
-                <CardBody className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("p-3 rounded-lg", util.color)}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                        {util.label}
-                      </p>
-                      <div className="text-xl font-bold text-neutral-900 dark:text-white">
-                        {isLoading ? (
-                          <Skeleton className="h-6 w-16" />
-                        ) : (
-                          formatCurrency(amount)
-                        )}
-                      </div>
+              <Card key={util.value} className="relative overflow-hidden">
+                <CardBody className="p-4 relative z-10">
+                  <div className="flex flex-col">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate" title={util.label}>
+                      {util.label}
+                    </p>
+                    <div className="text-xl font-bold text-neutral-900 dark:text-white truncate" title={formatCurrency(amount)}>
+                      {isLoading ? (
+                        <Skeleton className="h-6 w-16" />
+                      ) : (
+                        formatCurrency(amount)
+                      )}
                     </div>
                   </div>
                 </CardBody>
+                <Icon className={cn("absolute -bottom-2 -right-2 h-16 w-16 opacity-10", util.color.split(' ')[0])} />
               </Card>
             );
           })}
@@ -520,14 +512,14 @@ export function UtilityExpensesPage() {
                           </>
                         )}
                       </h3>
-                      
+
                       <div className={cn(
                         "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
-                        utilityForm.values.share_type === "percentage" 
+                        utilityForm.values.share_type === "percentage"
                           ? (Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.percentage || "0"), 0) === 100 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")
                           : (Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0) === parseFloat(utilityForm.values.total_amount || "0") ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")
                       )}>
-                        {utilityForm.values.share_type === "percentage" 
+                        {utilityForm.values.share_type === "percentage"
                           ? `Total: ${Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.percentage || "0"), 0).toFixed(1)}% / 100%`
                           : `Total: ${formatCurrency(Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0))} / ${formatCurrency(parseFloat(utilityForm.values.total_amount || "0"))}`
                         }
@@ -536,7 +528,7 @@ export function UtilityExpensesPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {members.map((member) => (
-                        <div 
+                        <div
                           key={member.user_id}
                           className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 shadow-sm transition-all hover:shadow-md"
                         >

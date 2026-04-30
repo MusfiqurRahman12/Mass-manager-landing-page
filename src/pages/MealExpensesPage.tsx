@@ -385,8 +385,8 @@ export function MealExpensesPage() {
           </CardHeader>
           <CardBody className="pt-6">
             <form onSubmit={addForm.handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-4">
+              <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
                     label="Amount (BDT)"
                     type="number"
@@ -405,9 +405,6 @@ export function MealExpensesPage() {
                     onChange={(date) => addForm.setValues({ ...addForm.values, expense_date: date })}
                     error={addForm.touched.expense_date ? addForm.errors.expense_date : undefined}
                   />
-                </div>
-
-                <div className="space-y-4">
                   <Input
                     label="Description"
                     placeholder="e.g., Grocery shopping"
@@ -440,38 +437,36 @@ export function MealExpensesPage() {
                   )}
                 </div>
 
-                <div className="flex flex-col justify-between gap-4">
-                  <div className="flex-1">
-                    {isManager && addForm.values.member_id && (
-                      <div className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-2">
-                        <label className="flex items-start gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            name="add_deposit"
-                            checked={addForm.values.add_deposit}
-                            onChange={(e) => addForm.setValues({ ...addForm.values, add_deposit: e.target.checked })}
-                            className="w-5 h-5 mt-0.5 text-primary bg-neutral-100 border-neutral-300 rounded-md focus:ring-primary dark:focus:ring-primary dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600 transition-all"
-                          />
-                          <div className="space-y-0.5">
-                            <span className="text-sm font-bold text-neutral-900 dark:text-white">
-                              Add as Deposit
-                            </span>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                              Member will be credited for this amount automatically.
-                            </p>
-                          </div>
-                        </label>
+                {isManager && addForm.values.member_id && (
+                  <div className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-2 md:w-1/2">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="add_deposit"
+                        checked={addForm.values.add_deposit}
+                        onChange={(e) => addForm.setValues({ ...addForm.values, add_deposit: e.target.checked })}
+                        className="w-5 h-5 mt-0.5 text-primary bg-neutral-100 border-neutral-300 rounded-md focus:ring-primary dark:focus:ring-primary dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600 transition-all"
+                      />
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-bold text-neutral-900 dark:text-white">
+                          Add as Deposit
+                        </span>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Member will be credited for this amount automatically.
+                        </p>
                       </div>
-                    )}
+                    </label>
                   </div>
-                  
+                )}
+                
+                <div className="flex justify-center pt-2">
                   <Button
                     type="submit"
                     isLoading={isSubmitting}
-                    className="w-full py-6 text-lg font-bold shadow-lg shadow-primary/20"
+                    className="w-full md:w-1/3 py-3 text-base font-bold shadow-lg shadow-primary/20"
                     variant="primary"
                   >
-                    <Plus className="h-6 w-6 mr-2" />
+                    <Plus className="h-5 w-5 mr-2" />
                     Record Expense
                   </Button>
                 </div>

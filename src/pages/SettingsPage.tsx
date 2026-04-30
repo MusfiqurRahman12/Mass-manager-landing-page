@@ -1,3 +1,4 @@
+import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ export function SettingsPage() {
   const [isTransferring, setIsTransferring] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [pendingTransfers, setPendingTransfers] = useState<TransferRequest[]>(
     [],
   );
@@ -268,14 +270,6 @@ export function SettingsPage() {
   };
 
   const handleDeleteMess = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this mess? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
     try {
       await messService.deleteMess();
       toast.success("Mess deleted successfully");
@@ -758,9 +752,16 @@ export function SettingsPage() {
               </p>
             </div>
 
+            <div className="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-lg text-error">
+              <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="text-sm font-medium">
+                Warning: Deleting this mess will permanently remove all associated data, including members, meals, expenses, and deposits. This action cannot be undone!
+              </div>
+            </div>
+
             <Button
               variant="outline"
-              onClick={handleDeleteMess}
+              onClick={() => setIsDeleteModalOpen(true)}
               className="border-error text-error hover:bg-error/10"
             >
               Delete Mess
@@ -833,6 +834,26 @@ export function SettingsPage() {
             disabled={!selectedMemberId || otherMembers.length === 0}
           >
             Send Request
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Mess"
+        description="Are you sure you want to delete this mess? This action cannot be undone."
+      >
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={() => setIsDeleteModalOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDeleteMess}>
+            Delete
           </Button>
         </ModalFooter>
       </Modal>

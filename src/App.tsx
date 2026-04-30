@@ -89,7 +89,7 @@ function App() {
         <Route
           path="/expense-summary"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireManager>
               <ExpenseSummaryPage />
             </ProtectedRoute>
           }
