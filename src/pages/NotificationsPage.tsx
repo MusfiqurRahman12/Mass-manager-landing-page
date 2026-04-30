@@ -113,7 +113,7 @@ export function NotificationsPage() {
       });
       setNotifications(data);
     } catch (error) {
-      toast.error("Failed to load notifications");
+      toast.error(error instanceof Error ? error.message : "Failed to load notifications");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -151,7 +151,7 @@ export function NotificationsPage() {
         )
       );
     } catch (error) {
-      toast.error("Failed to mark as read");
+      toast.error(error instanceof Error ? error.message : "Failed to mark as read");
     }
   };
 
@@ -166,7 +166,7 @@ export function NotificationsPage() {
       );
       toast.success("All notifications marked as read");
     } catch (error) {
-      toast.error("Failed to mark all as read");
+      toast.error(error instanceof Error ? error.message : "Failed to mark all as read");
     } finally {
       setIsSubmitting(false);
     }
@@ -185,7 +185,7 @@ export function NotificationsPage() {
       setShowDeleteModal(false);
       setNotificationToDelete(null);
     } catch (error) {
-      toast.error("Failed to delete notification");
+      toast.error(error instanceof Error ? error.message : "Failed to delete notification");
     } finally {
       setIsSubmitting(false);
     }

@@ -25,6 +25,8 @@ export interface AddMealExpensePayload {
   amount: number;
   description: string;
   expense_date: string;
+  member_id?: string;
+  add_deposit?: boolean;
 }
 
 export interface UpdateMealExpensePayload {
@@ -96,6 +98,7 @@ export interface UtilityExpense {
   month_id: string;
   utility_type: UtilityType;
   total_amount: number;
+  share_type: ShareType;
   description: string;
   expense_date: string;
   created_by: string;
@@ -106,8 +109,10 @@ export interface UtilityExpense {
 export interface AddUtilityPayload {
   utility_type: UtilityType;
   total_amount: number;
+  share_type: ShareType;
   description: string;
   expense_date: string;
+  member_shares?: MemberShareInput[];
 }
 
 // ==================== Summary Types ====================
@@ -201,6 +206,14 @@ export const expenseApi = {
   },
 
   // ========== Utility Expenses ==========
+  getUtilityPreview: async (params: HomeRentPreviewRequest): Promise<HomeRentPreviewResponse> => {
+    const { data } = await apiClient.post<HomeRentPreviewResponse>(
+      "/expenses/utilities/preview",
+      params
+    );
+    return data;
+  },
+
   getUtilityExpenses: async (params?: {
     month_id?: string;
     utility_type?: UtilityType;

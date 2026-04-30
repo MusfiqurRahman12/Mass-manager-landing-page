@@ -92,7 +92,7 @@ export function DepositsPage() {
         })),
       );
     } catch (error) {
-      toast.error("Failed to load deposit data");
+      toast.error(error instanceof Error ? error.message : "Failed to load deposit data");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -154,6 +154,13 @@ export function DepositsPage() {
   const totalDeposits = useMemo(() => {
     return deposits.reduce((sum, d) => sum + d.amount, 0);
   }, [deposits]);
+
+  const myTotalDeposits = useMemo(() => {
+    if (!user) return 0;
+    return deposits
+      .filter((d) => d.member_id === user.id)
+      .reduce((sum, d) => sum + d.amount, 0);
+  }, [deposits, user]);
 
 
   const currentBalance = useMemo(() => {
@@ -251,7 +258,7 @@ export function DepositsPage() {
           note: "",
         });
       } catch (error) {
-        toast.error("Failed to add deposit");
+        toast.error(error instanceof Error ? error.message : "Failed to add deposit");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -290,7 +297,7 @@ export function DepositsPage() {
         setIsEditModalOpen(false);
         setSelectedDeposit(null);
       } catch (error) {
-        toast.error("Failed to update deposit");
+        toast.error(error instanceof Error ? error.message : "Failed to update deposit");
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -332,7 +339,7 @@ export function DepositsPage() {
       setIsDeleteModalOpen(false);
       setDepositToDelete(null);
     } catch (error) {
-      toast.error("Failed to delete deposit");
+      toast.error(error instanceof Error ? error.message : "Failed to delete deposit");
       console.error(error);
     }
   };
@@ -365,13 +372,13 @@ export function DepositsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Deposits
+                    {isManager ? "Total Deposits" : "My Total Deposits"}
                   </p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-20" />
                     ) : (
-                      formatCurrency(totalDeposits)
+                      formatCurrency(isManager ? totalDeposits : myTotalDeposits)
                     )}
                   </div>
                 </div>
@@ -379,61 +386,66 @@ export function DepositsPage() {
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600">
-                  <TrendingDown className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Expenses
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      formatCurrency(mealCost?.total_cost || 0)
-                    )}
+          {/* Total Expenses and Current Balance — Manager only */}
+          {isManager && (
+            <>
+              <Card>
+                <CardBody className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600">
+                      <TrendingDown className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Total Expenses
+                      </p>
+                      <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                        {isLoading ? (
+                          <Skeleton className="h-8 w-20" />
+                        ) : (
+                          formatCurrency(mealCost?.total_cost || 0)
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+                </CardBody>
+              </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "p-3 rounded-lg",
-                    currentBalance >= 0
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-600"
-                      : "bg-red-100 dark:bg-red-900/30 text-red-600",
-                  )}
-                >
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Current Balance
-                  </p>
-                  <div
-                    className={cn(
-                      "text-2xl font-bold",
-                      currentBalance >= 0 ? "text-green-600" : "text-red-600",
-                    )}
-                  >
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      formatCurrency(currentBalance)
-                    )}
+              <Card>
+                <CardBody className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        "p-3 rounded-lg",
+                        currentBalance >= 0
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-600"
+                          : "bg-red-100 dark:bg-red-900/30 text-red-600",
+                      )}
+                    >
+                      <DollarSign className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Current Balance
+                      </p>
+                      <div
+                        className={cn(
+                          "text-2xl font-bold",
+                          currentBalance >= 0 ? "text-green-600" : "text-red-600",
+                        )}
+                      >
+                        {isLoading ? (
+                          <Skeleton className="h-8 w-20" />
+                        ) : (
+                          formatCurrency(currentBalance)
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+                </CardBody>
+              </Card>
+            </>
+          )}
 
           <Card>
             <CardBody className="p-4">
@@ -458,198 +470,7 @@ export function DepositsPage() {
           </Card>
         </div>
 
-        {/* Member Balance Summary */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Member Balance Summary
-              </h2>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : memberBalances.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-4" />
-                <p className="text-neutral-500 dark:text-neutral-400">
-                  No member data available
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-neutral-200 dark:border-neutral-700">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        Member
-                      </th>
-                      <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        Deposits
-                      </th>
-                      <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        Meals
-                      </th>
-                      <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        Meal Cost
-                      </th>
-                      <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        Due / Credit
-                      </th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {memberBalances.map((balance) => {
-                      const isDue = balance.dueAmount > 0;
-                      const isCredit = balance.dueAmount < 0;
-                      return (
-                        <tr
-                          key={balance.member.user_id}
-                          className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                        >
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold">
-                                {balance.member.full_name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase()
-                                  .slice(0, 2)}
-                              </div>
-                              <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                                {balance.member.full_name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right text-neutral-900 dark:text-white">
-                            {formatCurrency(balance.totalDeposits)}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right text-neutral-900 dark:text-white">
-                            {balance.totalMeals}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right text-neutral-900 dark:text-white">
-                            {formatCurrency(balance.mealCost)}
-                          </td>
-                          <td
-                            className={cn(
-                              "py-3 px-4 text-sm text-right font-semibold",
-                              isDue && "text-red-600",
-                              isCredit && "text-green-600",
-                              !isDue &&
-                                !isCredit &&
-                                "text-neutral-900 dark:text-white",
-                            )}
-                          >
-                            {isDue
-                              ? `+${formatCurrency(balance.dueAmount)}`
-                              : isCredit
-                                ? formatCurrency(balance.dueAmount)
-                                : "-"}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            {isDue ? (
-                              <Badge variant="error">Due</Badge>
-                            ) : isCredit ? (
-                              <Badge variant="success">Credit</Badge>
-                            ) : (
-                              <Badge variant="neutral">Settled</Badge>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Due Summary */}
-        {!isLoading && membersWithDue.length > 0 && (
-          <Card className="border-red-200 dark:border-red-800">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <h2 className="text-lg font-semibold text-red-600">
-                  Members with Outstanding Dues
-                </h2>
-              </div>
-            </CardHeader>
-            <CardBody>
-              <div className="space-y-2">
-                {membersWithDue.map((member) => (
-                  <div
-                    key={member.member.user_id}
-                    className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
-                  >
-                    <span className="font-medium text-neutral-900 dark:text-white">
-                      {member.member.full_name}
-                    </span>
-                    <span className="font-bold text-red-600">
-                      Due: {formatCurrency(member.dueAmount)}
-                    </span>
-                  </div>
-                ))}
-                <div className="mt-4 pt-4 border-t border-red-200 dark:border-red-800">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-neutral-900 dark:text-white">
-                      Total Outstanding
-                    </span>
-                    <span className="text-xl font-bold text-red-600">
-                      {formatCurrency(
-                        membersWithDue.reduce((sum, m) => sum + m.dueAmount, 0),
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* Credit Summary */}
-        {!isLoading && membersWithCredit.length > 0 && (
-          <Card className="border-green-200 dark:border-green-800">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <h2 className="text-lg font-semibold text-green-600">
-                  Members with Credit
-                </h2>
-              </div>
-            </CardHeader>
-            <CardBody>
-              <div className="space-y-2">
-                {membersWithCredit.map((member) => (
-                  <div
-                    key={member.member.user_id}
-                    className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"
-                  >
-                    <span className="font-medium text-neutral-900 dark:text-white">
-                      {member.member.full_name}
-                    </span>
-                    <span className="font-bold text-green-600">
-                      Credit: {formatCurrency(Math.abs(member.dueAmount))}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* Deposit Entry Form */}
+        {/* Add Deposit Form — Manager only, placed FIRST */}
         {isManager && (
           <Card>
             <CardHeader className="pb-4">
@@ -724,6 +545,153 @@ export function DepositsPage() {
                   </Button>
                 </div>
               </form>
+            </CardBody>
+          </Card>
+        )}
+
+
+
+        {/* Member Balance Summary — Manager only */}
+        {isManager && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Member Balance Summary
+                </h2>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : memberBalances.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-4" />
+                  <p className="text-neutral-500 dark:text-neutral-400">No member data available</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-neutral-200 dark:border-neutral-700">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Member</th>
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Deposits</th>
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Meals</th>
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Meal Cost</th>
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Due / Credit</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {memberBalances.map((balance) => {
+                        const isDue = balance.dueAmount > 0;
+                        const isCredit = balance.dueAmount < 0;
+                        return (
+                          <tr key={balance.member.user_id} className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold">
+                                  {balance.member.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                                </div>
+                                <span className="text-sm font-medium text-neutral-900 dark:text-white">{balance.member.full_name}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-right">{formatCurrency(balance.totalDeposits)}</td>
+                            <td className="py-3 px-4 text-sm text-right">{balance.totalMeals}</td>
+                            <td className="py-3 px-4 text-sm text-right">{formatCurrency(balance.mealCost)}</td>
+                            <td className={cn("py-3 px-4 text-sm text-right font-semibold", isDue && "text-red-600", isCredit && "text-green-600")}>
+                              {isDue ? `+${formatCurrency(balance.dueAmount)}` : isCredit ? formatCurrency(balance.dueAmount) : "-"}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {isDue ? <Badge variant="error">Due</Badge> : isCredit ? <Badge variant="success">Credit</Badge> : <Badge variant="neutral">Settled</Badge>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+
+
+        {!isLoading && membersWithDue.length > 0 && (
+          <Card className="border-red-200 dark:border-red-800">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <h2 className="text-lg font-semibold text-red-600">
+                  Members with Outstanding Dues
+                </h2>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <div className="space-y-2">
+                {membersWithDue.map((member) => (
+                  <div
+                    key={member.member.user_id}
+                    className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
+                  >
+                    <span className="font-medium text-neutral-900 dark:text-white">
+                      {member.member.full_name}
+                    </span>
+                    <span className="font-bold text-red-600">
+                      Due: {formatCurrency(member.dueAmount)}
+                    </span>
+                  </div>
+                ))}
+                <div className="mt-4 pt-4 border-t border-red-200 dark:border-red-800">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-neutral-900 dark:text-white">
+                      Total Outstanding
+                    </span>
+                    <span className="text-xl font-bold text-red-600">
+                      {formatCurrency(
+                        membersWithDue.reduce((sum, m) => sum + m.dueAmount, 0),
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Credit Summary */}
+        {!isLoading && membersWithCredit.length > 0 && (
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <h2 className="text-lg font-semibold text-green-600">
+                  Members with Credit
+                </h2>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <div className="space-y-2">
+                {membersWithCredit.map((member) => (
+                  <div
+                    key={member.member.user_id}
+                    className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"
+                  >
+                    <span className="font-medium text-neutral-900 dark:text-white">
+                      {member.member.full_name}
+                    </span>
+                    <span className="font-bold text-green-600">
+                      Credit: {formatCurrency(Math.abs(member.dueAmount))}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </CardBody>
           </Card>
         )}

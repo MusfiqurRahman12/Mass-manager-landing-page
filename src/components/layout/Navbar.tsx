@@ -31,12 +31,6 @@ export function Navbar({ onMenuClick }: NavbarProps) {
               >
                 Dashboard
               </Link>
-              <Link
-                to="/chat"
-                className="text-neutral-600 dark:text-neutral-400 hover:text-primary dark:hover:text-primary font-medium transition-colors duration-200"
-              >
-                Chat
-              </Link>
               {user.role === "manager" && (
                 <Link
                   to="/members"

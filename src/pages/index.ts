@@ -17,4 +17,5 @@ export { OnboardingPage } from "./OnboardingPage";
 export { RegisterPage } from "./RegisterPage";
 export { ReportsPage } from "./ReportsPage";
 export { SettingsPage } from "./SettingsPage";
+export { TicketsPage } from "./TicketsPage";
 export { UtilityExpensesPage } from "./UtilityExpensesPage";

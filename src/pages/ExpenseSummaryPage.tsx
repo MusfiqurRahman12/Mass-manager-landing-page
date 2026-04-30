@@ -20,9 +20,11 @@ import type {
   ExpenseSummaryMembersResponse,
   ExpenseSummaryTotalsResponse,
   MealExpensesResponse,
+  Meal,
 } from "../services";
-import { expenseApi } from "../services";
+import { expenseApi, mealService } from "../services";
 import { formatCurrency } from "../utils/format.utils";
+
 import { cn } from "../utils";
 
 export function ExpenseSummaryPage() {
@@ -31,22 +33,26 @@ export function ExpenseSummaryPage() {
   const [membersSummary, setMembersSummary] = useState<ExpenseSummaryMembersResponse | null>(null);
   const [totals, setTotals] = useState<ExpenseSummaryTotalsResponse | null>(null);
   const [mealExpenses, setMealExpenses] = useState<MealExpensesResponse | null>(null);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch data
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [membersData, totalsData, mealData] = await Promise.all([
+      const [membersData, totalsData, mealData, mealsData] = await Promise.all([
         expenseApi.getSummaryByMembers(),
         expenseApi.getSummaryTotals(),
         expenseApi.getMealExpenses(),
+        mealService.getMeals(),
       ]);
       setMembersSummary(membersData);
       setTotals(totalsData);
       setMealExpenses(mealData);
+      setMeals(mealsData);
+
     } catch (error) {
-      toast.error("Failed to load expense summary");
+      toast.error(error instanceof Error ? error.message : "Failed to load expense summary");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -166,54 +172,58 @@ export function ExpenseSummaryPage() {
 
         {/* Meal Rate Info */}
         {!isLoading && mealExpenses && (
-          <Card>
-            <CardHeader>
+          <Card className="border-green-200 dark:border-green-900/30 bg-green-50/30 dark:bg-green-900/10">
+            <CardHeader className="border-b border-green-200 dark:border-green-900/30 pb-4">
               <div className="flex items-center gap-2">
                 <Receipt className="h-5 w-5 text-green-600" />
-                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                <h2 className="text-lg font-bold text-green-800 dark:text-green-300">
                   Meal Rate Information
                 </h2>
               </div>
             </CardHeader>
-            <CardBody>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800">
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Meal Expenses
+            <CardBody className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-green-100 dark:border-green-900/20 shadow-sm">
+                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
+                    Total Grocery
                   </p>
-                  <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                  <p className="text-2xl font-black text-neutral-900 dark:text-white">
                     {formatCurrency(mealExpenses.total_meal_expenses)}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800">
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-green-100 dark:border-green-900/20 shadow-sm">
+                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
                     Total Meals
                   </p>
-                  <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                  <p className="text-2xl font-black text-neutral-900 dark:text-white">
                     {mealExpenses.total_meals}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-green-100 dark:bg-green-900/30">
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    Current Meal Rate
+                <div className="p-5 rounded-2xl bg-green-600 text-white shadow-lg shadow-green-600/20">
+                  <p className="text-xs font-bold text-green-100 uppercase tracking-wider mb-1">
+                    Final Meal Rate
                   </p>
-                  <p className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {formatCurrency(mealExpenses.meal_rate)}
-                  </p>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    per meal
-                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="text-3xl font-black">
+                      {formatCurrency(mealExpenses.meal_rate)}
+                    </p>
+                    <p className="text-green-100 text-sm font-medium">/ meal</p>
+                  </div>
                 </div>
               </div>
               {mealExpenses.monthly_meal_cost_set !== null && (
-                <p className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
-                  <span className="font-medium">Note:</span> Monthly meal cost has been manually set to{" "}
-                  <span className="font-semibold">{formatCurrency(mealExpenses.monthly_meal_cost_set)}</span>
-                </p>
+                <div className="mt-6 flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-100/50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800/50">
+                  <Calculator className="h-4 w-4" />
+                  <p>
+                    <span className="font-bold">Note:</span> Monthly meal cost has been manually adjusted to{" "}
+                    <span className="font-black underline decoration-green-500/50 underline-offset-4">{formatCurrency(mealExpenses.monthly_meal_cost_set)}</span>
+                  </p>
+                </div>
               )}
             </CardBody>
           </Card>
         )}
+
 
         {/* Member-wise Breakdown */}
         {!isLoading && membersSummary && (
@@ -250,43 +260,58 @@ export function ExpenseSummaryPage() {
                   </thead>
                   <tbody>
                     {membersSummary.member_summaries.map((member) => {
-
-                      const totalWithMeals = member.total_share;
+                      const memberMeals = meals
+                        .filter((m) => m.member_id === member.member_id)
+                        .reduce((sum, m) => sum + m.meal_count, 0);
+                      const mealCost = memberMeals * (mealExpenses?.meal_rate || 0);
+                      const totalWithMeals = member.total_share + mealCost;
 
                       return (
                         <tr
                           key={member.member_id}
-                          className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                          className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
                         >
                           <td className="py-4 px-4">
-                            <p className="font-medium text-neutral-900 dark:text-white">
+                            <p className="font-bold text-neutral-900 dark:text-white">
                               {member.member_name}
+                            </p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                              {memberMeals} meals recorded
                             </p>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <p className="text-neutral-900 dark:text-white font-medium">
+                            <p className="text-neutral-700 dark:text-neutral-300 font-medium">
                               {formatCurrency(member.home_rent_share)}
                             </p>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <p className="text-neutral-900 dark:text-white font-medium">
+                            <p className="text-neutral-700 dark:text-neutral-300 font-medium">
                               {formatCurrency(member.utility_share)}
                             </p>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <p className="text-neutral-900 dark:text-white font-semibold">
-                              {formatCurrency(member.total_share)}
-                            </p>
+                            <div className="inline-flex flex-col items-end">
+                              <p className="text-neutral-900 dark:text-white font-bold">
+                                {formatCurrency(member.total_share)}
+                              </p>
+                              <p className="text-[10px] text-neutral-400 uppercase tracking-tighter">Rent + Utils</p>
+                            </div>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <p className="text-lg font-bold text-primary">
-                              {formatCurrency(totalWithMeals)}
-                            </p>
+                            <div className="inline-flex flex-col items-end">
+                              <p className="text-xl font-black text-primary">
+                                {formatCurrency(totalWithMeals)}
+                              </p>
+                              <p className="text-[10px] text-primary/60 font-bold uppercase tracking-widest">
+                                Inc. {formatCurrency(mealCost)} meals
+                              </p>
+                            </div>
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
+
                   <tfoot>
                     <tr className="border-t-2 border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
                       <td className="py-4 px-4 font-bold text-neutral-900 dark:text-white">
@@ -355,21 +380,27 @@ export function ExpenseSummaryPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {expense.member_shares.map((share) => (
                         <div
                           key={share.id}
-                          className="p-2 rounded bg-neutral-100 dark:bg-neutral-800"
+                          className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all"
                         >
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {share.member_name}
-                          </p>
-                          <p className="font-medium text-neutral-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-bold text-blue-600">
+                              {share.member_name.charAt(0)}
+                            </div>
+                            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate max-w-[80px]">
+                              {share.member_name}
+                            </span>
+                          </div>
+                          <p className="font-bold text-neutral-900 dark:text-white text-sm">
                             {formatCurrency(share.amount)}
                           </p>
                         </div>
                       ))}
                     </div>
+
                   </div>
                 ))}
               </div>

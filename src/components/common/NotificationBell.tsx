@@ -80,15 +80,42 @@ export function NotificationBell() {
   const loadNotifications = async () => {
     try {
       const [notifs, countData] = await Promise.all([
-        notificationService.getNotifications({ limit: 5 }),
+        notificationService.getNotifications({ limit: 50 }), // Get more to account for filtering
         notificationService.getUnreadCount(),
       ]);
-      setNotifications(notifs);
-      setUnreadCount(countData.unread_count);
+
+      // Load preferences
+      const savedNotifications = localStorage.getItem("notifications");
+      const prefs = savedNotifications ? JSON.parse(savedNotifications) : null;
+
+      if (!prefs) {
+        setNotifications(notifs.slice(0, 5));
+        setUnreadCount(countData.unread_count);
+        return;
+      }
+
+      // Filter logic
+      const filteredNotifs = notifs.filter((n) => {
+        if (n.type.startsWith("meal_") && !prefs.meal_updates) return false;
+        if (n.type.startsWith("expense_") && !prefs.expense_updates) return false;
+        if (n.type.startsWith("deposit_") && !prefs.deposit_updates) return false;
+        if (n.type.startsWith("manager_transfer") && !prefs.manager_transfer) return false;
+        if (n.type === "market_day_reminder" && !prefs.market_day_reminder) return false;
+        return true;
+      });
+
+      // Update state
+      setNotifications(filteredNotifs.slice(0, 5));
+      
+      // Note: In a real app, unreadCount should be filtered by the backend
+      // For now, we estimate it or just use the backend count
+      setUnreadCount(filteredNotifs.filter(n => !n.is_read).length);
+      
     } catch (error) {
       console.error("Failed to load notifications");
     }
   };
+
 
   const handleMarkAsRead = async (
     notificationId: string,
@@ -104,7 +131,7 @@ export function NotificationBell() {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      toast.error("Failed to mark as read");
+      toast.error(error instanceof Error ? error.message : "Failed to mark as read");
     }
   };
 
@@ -116,7 +143,7 @@ export function NotificationBell() {
       setUnreadCount(0);
       toast.success("All notifications marked as read");
     } catch (error) {
-      toast.error("Failed to mark all as read");
+      toast.error(error instanceof Error ? error.message : "Failed to mark all as read");
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +159,7 @@ export function NotificationBell() {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
-      toast.error("Failed to delete notification");
+      toast.error(error instanceof Error ? error.message : "Failed to delete notification");
     }
   };
 

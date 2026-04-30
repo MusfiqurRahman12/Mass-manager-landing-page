@@ -53,6 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userInfo = await authService.getCurrentUserInfo();
           setUser(userInfo);
           
+          if (userInfo.role === "super_admin" as any) {
+            console.log("Super admin detected in main auth loop, redirecting to admin portal");
+            authService.logout();
+            window.location.href = "/admin/dashboard";
+            return;
+          }
+          
           if (userInfo.mess_id) {
             try {
               const messData = await messService.getMess();

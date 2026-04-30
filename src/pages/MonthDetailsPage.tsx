@@ -14,6 +14,7 @@ import { formatCurrency } from "../utils/format.utils";
 
 
 
+
 interface MemberSummary {
   member: Member;
   totalMeals: number;
@@ -85,7 +86,7 @@ export function MonthDetailsPage() {
       setMemberExpenseSummaries(expenseSummary.member_summaries);
       setDeposits(depositsData);
     } catch (error) {
-      toast.error("Failed to load month details");
+      toast.error(error instanceof Error ? error.message : "Failed to load month details");
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +150,7 @@ export function MonthDetailsPage() {
       await pdfService.downloadMonthPDF(monthId);
       toast.success("PDF downloaded successfully");
     } catch (error) {
-      toast.error("Failed to download PDF");
+      toast.error(error instanceof Error ? error.message : "Failed to download PDF");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -258,7 +259,7 @@ export function MonthDetailsPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <p className="text-sm text-neutral-500 mb-1">Total Cost</p>
+            <p className="text-sm text-neutral-500 mb-1">Total Meal Cost</p>
             <p className="text-2xl font-bold">
               {formatCurrency(month.total_cost)}
             </p>
@@ -359,32 +360,21 @@ export function MonthDetailsPage() {
                   </tr>
                 ))}
               </tbody>
+              {isManager && (
               <tfoot className="bg-neutral-50 dark:bg-neutral-800 font-medium">
                 <tr>
                   <td className="px-6 py-4">Total</td>
                   <td className="px-6 py-4 text-right">{month.total_meal}</td>
-                  <td className="px-6 py-4 text-right">
-                    {formatCurrency(totalMealCost)}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {formatCurrency(rentExpenses.reduce((sum, e) => sum + e.total_amount, 0))}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {formatCurrency(utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0))}
-                  </td>
-                  <td className="px-6 py-4 text-right text-success">
-                    {formatCurrency(totalDepositsSum)}
-                  </td>
-                  <td
-                    className={`px-6 py-4 text-right ${
-                      totalDepositsSum - totalExpenses >= 0 ? "text-success" : "text-error"
-                    }`}
-                  >
+                  <td className="px-6 py-4 text-right">{formatCurrency(totalMealCost)}</td>
+                  <td className="px-6 py-4 text-right">{formatCurrency(rentExpenses.reduce((sum, e) => sum + e.total_amount, 0))}</td>
+                  <td className="px-6 py-4 text-right">{formatCurrency(utilityExpenses.reduce((sum, e) => sum + e.total_amount, 0))}</td>
+                  <td className="px-6 py-4 text-right text-success">{formatCurrency(totalDepositsSum)}</td>
+                  <td className={`px-6 py-4 text-right ${totalDepositsSum - totalExpenses >= 0 ? "text-success" : "text-error"}`}>
                     {formatCurrency(totalDepositsSum - totalExpenses)}
                   </td>
-
                 </tr>
               </tfoot>
+              )}
 
             </table>
           </div>
@@ -546,47 +536,49 @@ export function MonthDetailsPage() {
           </div>
         </Card>
 
-        {/* Expense Breakdown */}
-        <Card className="overflow-hidden">
-          <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 className="text-xl font-semibold">Expense Breakdown</h2>
-          </div>
-          <div className="p-6">
-            {expensesByCategory.length === 0 ? (
-              <p className="text-neutral-500 text-center py-8">
-                No expenses recorded
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {expensesByCategory.map((expense) => (
-                  <div key={expense.category}>
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium">
-                        {getCategoryLabel(expense.category)}
-                      </span>
-                      <span className="text-neutral-600 dark:text-neutral-400">
-                        {formatCurrency(expense.amount)} (
-                        {expense.percentage.toFixed(1)}%)
-                      </span>
+        {/* Expense Breakdown — Manager only */}
+        {isManager && (
+          <Card className="overflow-hidden">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-xl font-semibold">Expense Breakdown</h2>
+            </div>
+            <div className="p-6">
+              {expensesByCategory.length === 0 ? (
+                <p className="text-neutral-500 text-center py-8">
+                  No expenses recorded
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {expensesByCategory.map((expense) => (
+                    <div key={expense.category}>
+                      <div className="flex justify-between mb-1">
+                        <span className="font-medium">
+                          {getCategoryLabel(expense.category)}
+                        </span>
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          {formatCurrency(expense.amount)} (
+                          {expense.percentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${expense.percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${expense.percentage}%` }}
-                      />
+                  ))}
+                  <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                    <div className="flex justify-between font-semibold">
+                      <span>Total Expenses</span>
+                      <span>{formatCurrency(totalExpenses)}</span>
                     </div>
-                  </div>
-                ))}
-                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <div className="flex justify-between font-semibold">
-                    <span>Total Expenses</span>
-                    <span>{formatCurrency(totalExpenses)}</span>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </Card>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Recent Transactions */}
         <Card className="overflow-hidden">

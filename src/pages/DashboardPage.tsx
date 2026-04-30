@@ -17,6 +17,7 @@ import { type MealCost, mealService } from "../services/mealService";
 import { type Member, memberService } from "../services/memberService";
 import { type Month, monthService } from "../services/monthService";
 import { expenseApi, type MemberSummary as ExpenseMemberSummary } from "../services/expenseApi";
+import { depositService } from "../services/depositService";
 
 
 export function DashboardPage() {
@@ -26,8 +27,10 @@ export function DashboardPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [mealCost, setMealCost] = useState<MealCost | null>(null);
   const [memberSummary, setMemberSummary] = useState<ExpenseMemberSummary | null>(null);
+  const [totalDeposits, setTotalDeposits] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isManager, setIsManager] = useState(false);
+
 
   // Start new month modal
   const [showStartMonthModal, setShowStartMonthModal] = useState(false);
@@ -53,10 +56,16 @@ export function DashboardPage() {
       setMembers(membersData);
       setMealCost(costData);
 
-      if (user?.role !== "manager" && monthData) {
-        const summaries = await expenseApi.getSummaryByMembers(monthData.id).catch(() => null);
-        if (summaries?.member_summaries && summaries.member_summaries.length > 0) {
-          setMemberSummary(summaries.member_summaries[0]);
+      if (monthData) {
+        if (user?.role === "manager") {
+          // Fetch total deposits for the active month
+          const deposits = await depositService.getDeposits({ month_id: monthData.id }).catch(() => []);
+          setTotalDeposits(deposits.reduce((sum, d) => sum + d.amount, 0));
+        } else {
+          const summaries = await expenseApi.getSummaryByMembers(monthData.id).catch(() => null);
+          if (summaries?.member_summaries && summaries.member_summaries.length > 0) {
+            setMemberSummary(summaries.member_summaries[0]);
+          }
         }
       }
 
@@ -69,7 +78,7 @@ export function DashboardPage() {
         setNextMonthDate(`${year}-${month}-01`);
       }
     } catch (error) {
-      toast.error("Failed to load dashboard data");
+      toast.error(error instanceof Error ? error.message : "Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +191,7 @@ export function DashboardPage() {
 
         {/* KPI Cards */}
         {isManager ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
                 🍽️
@@ -218,6 +227,17 @@ export function DashboardPage() {
 
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
+                💵
+              </div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Deposits</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(totalDeposits)}</h3>
+                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">This Month</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
                 👥
               </div>
               <div className="relative z-10">
@@ -227,6 +247,7 @@ export function DashboardPage() {
               </div>
             </Card>
           </div>
+
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
@@ -355,34 +376,37 @@ export function DashboardPage() {
             )}
           </Card>
 
-          {/* Quick Actions */}
-          <Card className="border border-neutral-200/60 dark:border-neutral-800/60 shadow-sm">
-            <div className="mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
-              <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Quick Actions</h2>
-            </div>
-            <div className="space-y-2">
-              {[
-                { label: "Add Meal", path: "/meals", icon: "🍽️", color: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400" },
-                { label: "Add Expense", path: "/expense-summary", icon: "💰", color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" },
-                { label: "Add Deposit", path: "/deposits", icon: "💵", color: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" },
-                { label: "View Members", path: "/members", icon: "👥", color: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400" },
-              ].map((action) => (
-                <button
-                  key={action.label}
-                  onClick={() => navigate(action.path)}
-                  className="w-full p-3 text-left rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors font-medium flex items-center gap-4 group border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700"
-                >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-transform group-hover:scale-110 ${action.color}`}>
-                    {action.icon}
-                  </div>
-                  <span className="text-neutral-700 dark:text-neutral-200">{action.label}</span>
-                  <svg className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </Card>
+          {/* Quick Actions — Manager only */}
+          {isManager && (
+            <Card className="border border-neutral-200/60 dark:border-neutral-800/60 shadow-sm">
+              <div className="mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Quick Actions</h2>
+              </div>
+              <div className="space-y-2">
+                {[
+                  { label: "Add Meal", path: "/meals", icon: "🍽️", color: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400" },
+                  { label: "Add Expense", path: "/expense-summary", icon: "💰", color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" },
+                  { label: "Add Deposit", path: "/deposits", icon: "💵", color: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" },
+                  { label: "View Members", path: "/members", icon: "👥", color: "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400" },
+                ].map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => navigate(action.path)}
+                    className="w-full p-3 text-left rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors font-medium flex items-center gap-4 group border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700"
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-transform group-hover:scale-110 ${action.color}`}>
+                      {action.icon}
+                    </div>
+                    <span className="text-neutral-700 dark:text-neutral-200">{action.label}</span>
+                    <svg className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            </Card>
+          )}
+
         </div>
       </div>
 

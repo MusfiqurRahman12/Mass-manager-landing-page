@@ -36,9 +36,9 @@ export function formatCurrency(
   }).format(amount);
 
   // Force the Taka symbol if BDT (some browsers show 'BDT' instead of '৳' by default)
-  // if (currency === "BDT") {
-  //   return formatted.replace("BDT", "৳").replace("bdt", "৳");
-  // }
+  if (currency === "BDT") {
+    return formatted.replace("BDT", "৳").replace("bdt", "৳");
+  }
 
   return formatted;
 }
@@ -82,4 +82,25 @@ export function camelCaseToTitleCase(str: string): string {
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (char) => char.toUpperCase())
     .trim();
+}
+
+/**
+ * Returns a human-readable relative time string, e.g. "3 minutes ago"
+ */
+export function formatDistanceToNow(date: Date): string {
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 30) return `${days}d ago`;
+  if (months < 12) return `${months}mo ago`;
+  return `${years}y ago`;
 }
