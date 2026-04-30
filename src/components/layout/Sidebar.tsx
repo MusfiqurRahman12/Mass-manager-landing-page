@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   Home,
+  LifeBuoy,
   PiggyBank,
   Receipt,
   Settings,
@@ -54,6 +55,11 @@ const navItems: NavItem[] = [
     label: "Settings",
     icon: <Settings className="w-5 h-5" />,
     path: "/settings",
+  },
+  {
+    label: "Support",
+    icon: <LifeBuoy className="w-5 h-5" />,
+    path: "/support",
   },
 ];
 

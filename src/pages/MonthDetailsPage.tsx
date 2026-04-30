@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Badge, Button, Card, LoadingSpinner } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useRequireAuth } from "../hooks";
-import { useAuth } from "../context";
 import { depositService, type Deposit } from "../services/depositService";
 import { mealService, type Meal } from "../services/mealService";
 import { expenseApi, type HomeRentExpense, type UtilityExpense, type MemberSummary as ExpenseMemberSummary, type MealExpense } from "../services/expenseApi";
