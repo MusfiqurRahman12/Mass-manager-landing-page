@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
 const ADMIN_TOKEN_KEY = "admin_token";
 
 function getHeaders(): Record<string, string> {
@@ -40,12 +40,12 @@ export interface ActivityItem {
 
 export const adminStatsService = {
   getOverview: (): Promise<OverviewStats> =>
-    fetch(`${API_BASE}/api/v1/admin/stats/overview`, { headers: getHeaders() }).then((r) =>
+    fetch(`${API_BASE}/admin/stats/overview`, { headers: getHeaders() }).then((r) =>
       handleResponse<OverviewStats>(r),
     ),
 
   getActivity: (limit = 20): Promise<ActivityItem[]> =>
-    fetch(`${API_BASE}/api/v1/admin/stats/activity?limit=${limit}`, {
+    fetch(`${API_BASE}/admin/stats/activity?limit=${limit}`, {
       headers: getHeaders(),
     }).then((r) => handleResponse<ActivityItem[]>(r)),
 };
@@ -71,26 +71,26 @@ export const adminMessService = {
     if (params?.search) q.set("search", params.search);
     if (params?.skip !== undefined) q.set("skip", String(params.skip));
     if (params?.limit !== undefined) q.set("limit", String(params.limit));
-    return fetch(`${API_BASE}/api/v1/admin/messes?${q}`, { headers: getHeaders() }).then((r) =>
+    return fetch(`${API_BASE}/admin/messes?${q}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminMess[]>(r),
     );
   },
   get: (id: string): Promise<AdminMess> =>
-    fetch(`${API_BASE}/api/v1/admin/messes/${id}`, { headers: getHeaders() }).then((r) =>
+    fetch(`${API_BASE}/admin/messes/${id}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminMess>(r),
     ),
   suspend: (id: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/messes/${id}/suspend`, {
+    fetch(`${API_BASE}/admin/messes/${id}/suspend`, {
       method: "PATCH",
       headers: getHeaders(),
     }).then((r) => handleResponse(r)),
   activate: (id: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/messes/${id}/activate`, {
+    fetch(`${API_BASE}/admin/messes/${id}/activate`, {
       method: "PATCH",
       headers: getHeaders(),
     }).then((r) => handleResponse(r)),
   delete: (id: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/messes/${id}`, {
+    fetch(`${API_BASE}/admin/messes/${id}`, {
       method: "DELETE",
       headers: getHeaders(),
     }).then((r) => handleResponse(r)),
@@ -111,12 +111,12 @@ export const adminManagerService = {
   list: (params?: { search?: string }): Promise<AdminManager[]> => {
     const q = new URLSearchParams();
     if (params?.search) q.set("search", params.search);
-    return fetch(`${API_BASE}/api/v1/admin/managers?${q}`, { headers: getHeaders() }).then((r) =>
+    return fetch(`${API_BASE}/admin/managers?${q}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminManager[]>(r),
     );
   },
   get: (id: string): Promise<AdminManager> =>
-    fetch(`${API_BASE}/api/v1/admin/managers/${id}`, { headers: getHeaders() }).then((r) =>
+    fetch(`${API_BASE}/admin/managers/${id}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminManager>(r),
     ),
 };
@@ -136,12 +136,12 @@ export const adminUserService = {
     const q = new URLSearchParams();
     if (params?.role) q.set("role", params.role);
     if (params?.search) q.set("search", params.search);
-    return fetch(`${API_BASE}/api/v1/admin/users?${q}`, { headers: getHeaders() }).then((r) =>
+    return fetch(`${API_BASE}/admin/users?${q}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminUserOut[]>(r),
     );
   },
   delete: (id: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/users/${id}`, {
+    fetch(`${API_BASE}/admin/users/${id}`, {
       method: "DELETE",
       headers: getHeaders(),
     }).then((r) => handleResponse(r)),
@@ -186,22 +186,22 @@ export const adminTicketService = {
     if (params?.ticket_status) q.set("ticket_status", params.ticket_status);
     if (params?.category) q.set("category", params.category);
     if (params?.priority) q.set("priority", params.priority);
-    return fetch(`${API_BASE}/api/v1/admin/tickets?${q}`, { headers: getHeaders() }).then((r) =>
+    return fetch(`${API_BASE}/admin/tickets?${q}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminTicket[]>(r),
     );
   },
   get: (id: string): Promise<AdminTicketDetail> =>
-    fetch(`${API_BASE}/api/v1/admin/tickets/${id}`, { headers: getHeaders() }).then((r) =>
+    fetch(`${API_BASE}/admin/tickets/${id}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminTicketDetail>(r),
     ),
   reply: (id: string, body: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/tickets/${id}/reply`, {
+    fetch(`${API_BASE}/admin/tickets/${id}/reply`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ body }),
     }).then((r) => handleResponse(r)),
   updateStatus: (id: string, status: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/tickets/${id}/status`, {
+    fetch(`${API_BASE}/admin/tickets/${id}/status`, {
       method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify({ status }),
@@ -234,23 +234,23 @@ export interface PackageInput {
 
 export const adminPackageService = {
   list: (): Promise<AdminPackage[]> =>
-    fetch(`${API_BASE}/api/v1/admin/packages`, { headers: getHeaders() }).then((r) =>
+    fetch(`${API_BASE}/admin/packages`, { headers: getHeaders() }).then((r) =>
       handleResponse<AdminPackage[]>(r),
     ),
   create: (data: PackageInput): Promise<AdminPackage> =>
-    fetch(`${API_BASE}/api/v1/admin/packages`, {
+    fetch(`${API_BASE}/admin/packages`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(data),
     }).then((r) => handleResponse<AdminPackage>(r)),
   update: (id: string, data: PackageInput): Promise<AdminPackage> =>
-    fetch(`${API_BASE}/api/v1/admin/packages/${id}`, {
+    fetch(`${API_BASE}/admin/packages/${id}`, {
       method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(data),
     }).then((r) => handleResponse<AdminPackage>(r)),
   delete: (id: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/packages/${id}`, {
+    fetch(`${API_BASE}/admin/packages/${id}`, {
       method: "DELETE",
       headers: getHeaders(),
     }).then((r) => handleResponse(r)),
@@ -260,7 +260,7 @@ export const adminPackageService = {
 
 export const adminAnnouncementService = {
   broadcast: (title: string, body: string): Promise<{ message: string }> =>
-    fetch(`${API_BASE}/api/v1/admin/announcements`, {
+    fetch(`${API_BASE}/admin/announcements`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ title, body }),
@@ -287,7 +287,7 @@ export const adminAuditService = {
     if (params?.entity_type) q.set("entity_type", params.entity_type);
     if (params?.skip !== undefined) q.set("skip", String(params.skip));
     if (params?.limit !== undefined) q.set("limit", String(params.limit));
-    return fetch(`${API_BASE}/api/v1/admin/audit?${q}`, { headers: getHeaders() }).then((r) =>
+    return fetch(`${API_BASE}/admin/audit?${q}`, { headers: getHeaders() }).then((r) =>
       handleResponse<AuditLogEntry[]>(r),
     );
   },
