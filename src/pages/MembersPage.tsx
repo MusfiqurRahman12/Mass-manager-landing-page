@@ -44,6 +44,9 @@ export function MembersPage() {
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
 
+  // Status toggle
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+
   // Transfer manager
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
@@ -58,7 +61,7 @@ export function MembersPage() {
   const loadMembers = async () => {
     setIsLoading(true);
     try {
-      const data = await memberService.getMembers();
+      const data = await memberService.getMembers(true);
       setMembers(data);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load members");
@@ -144,6 +147,21 @@ export function MembersPage() {
       toast.error(error instanceof Error ? error.message : "Failed to remove member");
     } finally {
       setIsRemoving(false);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    if (!selectedMember) return;
+    setIsTogglingStatus(true);
+    try {
+      await memberService.updateStatus(selectedMember.user_id, !selectedMember.is_active);
+      toast.success(`Member ${selectedMember.is_active ? 'deactivated' : 'activated'} successfully`);
+      loadMembers();
+      setShowDetailsModal(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update member status");
+    } finally {
+      setIsTogglingStatus(false);
     }
   };
 
@@ -257,7 +275,7 @@ export function MembersPage() {
             {members.map((member) => (
               <div
                 key={member.user_id}
-                className="p-4 sm:px-6 flex items-center gap-4 hover:bg-neutral-50/80 dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer group"
+                className={`p-4 sm:px-6 flex items-center gap-4 hover:bg-neutral-50/80 dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer group ${!member.is_active ? 'opacity-60 grayscale-[0.5]' : ''}`}
                 onClick={() => openMemberDetails(member)}
               >
                 <div
@@ -277,6 +295,11 @@ export function MembersPage() {
                       {member.role === "manager" && (
                         <Badge variant="success" size="sm" className="px-2 py-0.5 rounded-md font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-500/20">
                           Manager
+                        </Badge>
+                      )}
+                      {!member.is_active && (
+                        <Badge variant="default" size="sm" className="px-2 py-0.5 rounded-md font-medium bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
+                          Inactive
                         </Badge>
                       )}
                     </div>
@@ -497,12 +520,21 @@ export function MembersPage() {
             <ModalFooter>
               {isManager && selectedMember.user_id !== user?.id && (
                 <>
+                  {selectedMember.is_active && (
+                    <Button
+                      variant="outline"
+                      className="text-warning border-warning hover:bg-warning/10"
+                      onClick={() => setShowTransferModal(true)}
+                    >
+                      Make Manager
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
-                    className="text-warning border-warning hover:bg-warning/10"
-                    onClick={() => setShowTransferModal(true)}
+                    onClick={handleToggleStatus}
+                    isLoading={isTogglingStatus}
                   >
-                    Make Manager
+                    {selectedMember.is_active ? "Deactivate" : "Activate"}
                   </Button>
                   <Button
                     variant="danger"
@@ -511,7 +543,7 @@ export function MembersPage() {
                       confirmRemoveMember(selectedMember);
                     }}
                   >
-                    Remove Member
+                    Remove
                   </Button>
                 </>
               )}
