@@ -24,9 +24,9 @@ export interface TransferManagerPayload {
 }
 
 export const memberService = {
-  // Get all members
-  getMembers: async (): Promise<Member[]> => {
-    const { data } = await apiClient.get<Member[]>("/members");
+  // Get members (optionally including inactive ones)
+  getMembers: async (includeInactive: boolean = false): Promise<Member[]> => {
+    const { data } = await apiClient.get<Member[]>(`/members?include_inactive=${includeInactive}`);
     return data;
   },
 
@@ -53,6 +53,12 @@ export const memberService = {
       "/members/transfer-manager",
       payload,
     );
+    return data;
+  },
+
+  // Update member status (active/inactive)
+  updateStatus: async (userId: string, is_active: boolean): Promise<Member> => {
+    const { data } = await apiClient.patch<Member>(`/members/${userId}/status`, { is_active });
     return data;
   },
 };

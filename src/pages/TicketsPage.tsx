@@ -60,17 +60,10 @@ interface TicketDetail extends TicketOut {
   replies: TicketReply[];
 }
 
-function statusColor(status: string) {
-  if (status === "open") return "var(--color-amber, #f59e0b)";
-  if (status === "in_progress") return "var(--primary)";
-  if (status === "resolved") return "#22c55e";
-  return "#6b7280";
-}
-
 function StatusIcon({ status }: { status: string }) {
   if (status === "resolved" || status === "closed")
-    return <CheckCircle2 className="w-4 h-4" style={{ color: "#22c55e" }} />;
-  return <Clock className="w-4 h-4" style={{ color: statusColor(status) }} />;
+    return <CheckCircle2 className="w-5 h-5" />;
+  return <Clock className="w-5 h-5" />;
 }
 
 export function TicketsPage() {
@@ -138,26 +131,20 @@ export function TicketsPage() {
 
   return (
     <MainLayout>
-      <div className="page-container">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "1.5rem",
-          }}
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-gray-800/50 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50">
           <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <MessageSquare className="w-6 h-6 text-primary" />
               Support Tickets
             </h1>
-            <p style={{ margin: "0.25rem 0 0", opacity: 0.6, fontSize: "0.875rem" }}>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
               Submit issues or questions to our admin team
             </p>
           </div>
           <button
-            className="btn btn-primary"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors shadow-sm font-medium"
             onClick={() => setShowForm((v) => !v)}
           >
             {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -167,29 +154,27 @@ export function TicketsPage() {
 
         {/* New Ticket Form */}
         {showForm && (
-          <div className="card" style={{ marginBottom: "1.5rem", padding: "1.5rem" }}>
-            <h2
-              style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}
-            >
-              <MessageSquare className="w-4 h-4" style={{ display: "inline", marginRight: "0.5rem" }} />
+          <div className="bg-white dark:bg-gray-800/50 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 animate-in slide-in-from-top-4 fade-in duration-200">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
               New Support Ticket
             </h2>
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="form-label">Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Title</label>
                 <input
-                  className="form-input"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-none"
                   placeholder="Brief summary of your issue"
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   required
                 />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="form-label">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
                   <select
-                    className="form-select"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-none"
                     value={form.category}
                     onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   >
@@ -200,9 +185,9 @@ export function TicketsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="form-label">Priority</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Priority</label>
                   <select
-                    className="form-select"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-none"
                     value={form.priority}
                     onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
                   >
@@ -213,9 +198,9 @@ export function TicketsPage() {
                 </div>
               </div>
               <div>
-                <label className="form-label">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
                 <textarea
-                  className="form-input"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors outline-none resize-none"
                   rows={5}
                   placeholder="Describe your issue in detail…"
                   value={form.body}
@@ -223,11 +208,19 @@ export function TicketsPage() {
                   required
                 />
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button 
+                  type="button" 
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                  onClick={() => setShowForm(false)}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                <button 
+                  type="submit" 
+                  className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors shadow-sm font-medium disabled:opacity-70"
+                  disabled={submitting}
+                >
                   {submitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
@@ -242,100 +235,112 @@ export function TicketsPage() {
 
         {/* Ticket List */}
         {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
-            <Loader2 className="w-8 h-8 animate-spin" />
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="w-10 h-10 text-primary animate-spin" />
           </div>
         ) : tickets.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: "4rem 2rem" }}>
-            <MessageSquare style={{ width: 48, height: 48, margin: "0 auto 1rem", opacity: 0.3 }} />
-            <p style={{ opacity: 0.6 }}>No tickets yet. Create one above.</p>
+          <div className="bg-white dark:bg-gray-800/50 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 flex flex-col items-center justify-center py-20 px-4 text-center">
+            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+              <MessageSquare className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No tickets yet</h3>
+            <p className="text-gray-500 dark:text-gray-400">Create a new ticket above if you need support.</p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div className="space-y-4">
             {tickets.map((ticket) => (
-              <div key={ticket.id} className="card">
+              <div key={ticket.id} className="bg-white dark:bg-gray-800/50 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden transition-all hover:shadow-md">
                 <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    padding: "1rem 1.25rem",
-                    cursor: "pointer",
-                  }}
+                  className="flex items-center gap-4 p-5 cursor-pointer select-none"
                   onClick={() => loadDetail(ticket.id)}
                 >
-                  <StatusIcon status={ticket.status} />
-                  <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                    <p style={{ fontWeight: 600, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {ticket.title}
-                    </p>
-                    <p style={{ margin: "0.2rem 0 0", opacity: 0.5, fontSize: "0.8rem" }}>
-                      {ticket.category} • {ticket.priority} priority •{" "}
-                      {ticket.reply_count} repl{ticket.reply_count === 1 ? "y" : "ies"}
-                    </p>
+                  <div className={`p-2.5 rounded-full ${ticket.status === 'resolved' || ticket.status === 'closed' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : ticket.status === 'in_progress' ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'}`}>
+                    <StatusIcon status={ticket.status} />
                   </div>
-                  <span
-                    style={{
-                      padding: "0.2rem 0.6rem",
-                      borderRadius: "9999px",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      background: `${statusColor(ticket.status)}20`,
-                      color: statusColor(ticket.status),
-                    }}
-                  >
-                    {ticket.status.replace("_", " ")}
-                  </span>
-                  {expandedId === ticket.id ? (
-                    <ChevronUp className="w-4 h-4" style={{ opacity: 0.5 }} />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" style={{ opacity: 0.5 }} />
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+                      {ticket.title}
+                    </h3>
+                    <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="capitalize">{ticket.category.replace('_', ' ')}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                      <span className="capitalize">{ticket.priority}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                      <span>{ticket.reply_count} repl{ticket.reply_count === 1 ? "y" : "ies"}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase ${
+                        ticket.status === 'resolved' || ticket.status === 'closed' 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                          : ticket.status === 'in_progress'
+                          ? 'bg-primary/10 text-primary dark:text-primary-foreground'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      }`}
+                    >
+                      {ticket.status.replace("_", " ")}
+                    </span>
+                    <div className="text-gray-400 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-full">
+                      {expandedId === ticket.id ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Expanded replies */}
                 {expandedId === ticket.id && (
-                  <div style={{ borderTop: "1px solid var(--border)", padding: "1.25rem" }}>
+                  <div className="border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/30 p-5 animate-in slide-in-from-top-2 fade-in duration-200">
                     {detailLoading ? (
-                      <div style={{ display: "flex", justifyContent: "center", padding: "1rem" }}>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                      <div className="flex justify-center py-6">
+                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
                       </div>
                     ) : detail ? (
-                      <>
-                        <p style={{ opacity: 0.7, marginBottom: "1rem", whiteSpace: "pre-wrap" }}>
+                      <div className="space-y-6">
+                        <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                           {detail.body}
-                        </p>
+                        </div>
+                        
                         {detail.replies.length > 0 && (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
+                          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700/50">
+                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Replies</h4>
                             {detail.replies.map((r) => (
                               <div
                                 key={r.id}
-                                style={{
-                                  padding: "0.75rem 1rem",
-                                  borderRadius: "0.5rem",
-                                  background: r.is_admin_reply
-                                    ? "var(--primary)15"
-                                    : "var(--neutral-100, #f5f5f5)",
-                                  borderLeft: r.is_admin_reply
-                                    ? "3px solid var(--primary)"
-                                    : "3px solid transparent",
-                                }}
+                                className={`p-4 rounded-2xl ${
+                                  r.is_admin_reply
+                                    ? "bg-primary/5 border-l-4 border-primary"
+                                    : "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 shadow-sm"
+                                }`}
                               >
-                                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
-                                  {r.is_admin_reply && <Shield className="w-3 h-3" style={{ color: "var(--primary)" }} />}
-                                  <strong style={{ fontSize: "0.85rem" }}>{r.author_name}</strong>
+                                <div className="flex items-center gap-2 mb-2">
+                                  {r.is_admin_reply ? (
+                                    <Shield className="w-4 h-4 text-primary" />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
+                                      {r.author_name.charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <strong className="text-sm font-semibold text-gray-900 dark:text-white">
+                                    {r.author_name}
+                                  </strong>
                                   {r.is_admin_reply && (
-                                    <span style={{ fontSize: "0.7rem", background: "var(--primary)", color: "#fff", padding: "0 6px", borderRadius: "9999px" }}>
-                                      Admin
+                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                      Support Team
                                     </span>
                                   )}
                                 </div>
-                                <p style={{ margin: 0, fontSize: "0.875rem", opacity: 0.8 }}>{r.body}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed ml-[1.75rem]">
+                                  {r.body}
+                                </p>
                               </div>
                             ))}
                           </div>
                         )}
-                      </>
+                      </div>
                     ) : null}
                   </div>
                 )}
