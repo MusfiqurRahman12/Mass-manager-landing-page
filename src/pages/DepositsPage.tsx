@@ -13,7 +13,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Badge,
@@ -32,10 +32,13 @@ import {
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useForm } from "../hooks/useForm";
-import type { Deposit, MealCost, Member } from "../services";
-import { depositService, mealService, memberService } from "../services";
+import type { Deposit, Member, Meal } from "../services";
 import { cn } from "../utils";
 import { formatCurrency } from "../utils/format.utils";
+import { useDeposits, useAddDeposit, useUpdateDeposit, useDeleteDeposit } from "../hooks/queries/useExpenseQueries";
+import { useMembers } from "../hooks/queries/useMemberQueries";
+import { useMeals, useMealCost } from "../hooks/queries/useMealQueries";
+
 
 // Types
 interface DepositFormValues {
@@ -51,57 +54,30 @@ export function DepositsPage() {
   const { user } = useAuth();
   const isManager = user?.role === "manager";
 
-  // State
-  const [deposits, setDeposits] = useState<Deposit[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [mealCost, setMealCost] = useState<MealCost | null>(null);
-  const [meals, setMeals] = useState<
-    { member_id: string; meal_count: number }[]
-  >([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // UI-only state
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [depositToDelete, setDepositToDelete] = useState<Deposit | null>(null);
-
-  // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
   const [filterMember, setFilterMember] = useState<string>("");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
 
-  // Fetch initial data
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [depositsData, membersData, costData, mealsData] =
-        await Promise.all([
-          depositService.getDeposits(),
-          memberService.getMembers(),
-          mealService.getMealCost().catch(() => null),
-          mealService.getMeals(),
-        ]);
-      setDeposits(depositsData);
-      setMembers(membersData);
-      setMealCost(costData);
-      setMeals(
-        mealsData.map((m) => ({
-          member_id: m.member_id,
-          meal_count: m.meal_count,
-        })),
-      );
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load deposit data");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ── Data Queries ──────────────────────────────────────────────────────────
+  const { data: deposits = [] as Deposit[], isLoading: depositsLoading } = useDeposits();
+  const { data: members = [] as Member[], isLoading: membersLoading } = useMembers();
+  const { data: mealCost, isLoading: costLoading } = useMealCost();
+  const { data: mealsRaw = [] as Meal[], isLoading: mealsLoading } = useMeals();
+  const isLoading = depositsLoading || membersLoading || costLoading || mealsLoading;
+  const meals = mealsRaw.map((m) => ({ member_id: m.member_id, meal_count: m.meal_count }));
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  const addDeposit = useAddDeposit();
+  const updateDeposit = useUpdateDeposit();
+  const deleteDeposit = useDeleteDeposit();
+
+
 
   // Member options for select
   const memberOptions = useMemo(
@@ -216,7 +192,6 @@ export function DepositsPage() {
     return Object.values(balances).sort((a, b) => b.dueAmount - a.dueAmount);
   }, [members, deposits, meals, mealCost]);
 
-  // Forms
   const depositForm = useForm<DepositFormValues>({
     initialValues: {
       member_id: "",
@@ -229,119 +204,67 @@ export function DepositsPage() {
       if (!values.member_id) errors.member_id = "Please select a member";
       if (!values.amount) errors.amount = "Please enter an amount";
       const amount = parseFloat(values.amount);
-      if (isNaN(amount) || amount <= 0) {
-        errors.amount = "Amount must be greater than 0";
-      }
+      if (isNaN(amount) || amount <= 0) errors.amount = "Amount must be greater than 0";
       if (!values.deposit_date) errors.deposit_date = "Please select a date";
       return errors;
     },
     onSubmit: async (values) => {
-      if (!isManager) {
-        toast.error("Only managers can add deposits");
-        return;
-      }
-      setIsSubmitting(true);
-      try {
-        await depositService.addDeposit({
-          member_id: values.member_id,
-          amount: parseFloat(values.amount),
-          deposit_date: values.deposit_date,
-          note: values.note.trim() || undefined,
-        });
-        toast.success("Deposit added successfully");
-        await fetchData();
-        depositForm.resetForm();
-        depositForm.setValues({
-          member_id: "",
-          amount: "",
-          deposit_date: format(new Date(), "yyyy-MM-dd"),
-          note: "",
-        });
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to add deposit");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
+      if (!isManager) { toast.error("Only managers can add deposits"); return; }
+      await addDeposit.mutateAsync({
+        member_id: values.member_id,
+        amount: parseFloat(values.amount),
+        deposit_date: values.deposit_date,
+        note: values.note.trim() || undefined,
+      });
+      depositForm.resetForm();
+      depositForm.setValues({ member_id: "", amount: "", deposit_date: format(new Date(), "yyyy-MM-dd"), note: "" });
     },
   });
 
   const editForm = useForm<DepositFormValues>({
-    initialValues: {
-      member_id: "",
-      amount: "",
-      deposit_date: "",
-      note: "",
-    },
+    initialValues: { member_id: "", amount: "", deposit_date: "", note: "" },
     validate: (values) => {
       const errors: Record<string, string> = {};
       if (!values.amount) errors.amount = "Please enter an amount";
       const amount = parseFloat(values.amount);
-      if (isNaN(amount) || amount <= 0) {
-        errors.amount = "Amount must be greater than 0";
-      }
+      if (isNaN(amount) || amount <= 0) errors.amount = "Amount must be greater than 0";
       if (!values.deposit_date) errors.deposit_date = "Please select a date";
       return errors;
     },
     onSubmit: async (values) => {
       if (!isManager || !selectedDeposit) return;
-      setIsSubmitting(true);
-      try {
-        await depositService.updateDeposit(selectedDeposit.id, {
+      await updateDeposit.mutateAsync({
+        id: selectedDeposit.id,
+        payload: {
           amount: parseFloat(values.amount),
           deposit_date: values.deposit_date,
           note: values.note.trim() || undefined,
-        });
-        toast.success("Deposit updated successfully");
-        await fetchData();
-        setIsEditModalOpen(false);
-        setSelectedDeposit(null);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to update deposit");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
+        },
+      });
+      setIsEditModalOpen(false);
+      setSelectedDeposit(null);
     },
   });
 
   // Handlers
   const handleEdit = (deposit: Deposit) => {
-    if (!isManager) {
-      toast.error("Only managers can edit deposits");
-      return;
-    }
+    if (!isManager) { toast.error("Only managers can edit deposits"); return; }
     setSelectedDeposit(deposit);
-    editForm.setValues({
-      member_id: deposit.member_id,
-      amount: deposit.amount.toString(),
-      deposit_date: deposit.deposit_date,
-      note: deposit.note || "",
-    });
+    editForm.setValues({ member_id: deposit.member_id, amount: deposit.amount.toString(), deposit_date: deposit.deposit_date, note: deposit.note || "" });
     setIsEditModalOpen(true);
   };
 
   const handleDelete = (deposit: Deposit) => {
-    if (!isManager) {
-      toast.error("Only managers can delete deposits");
-      return;
-    }
+    if (!isManager) { toast.error("Only managers can delete deposits"); return; }
     setDepositToDelete(deposit);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!isManager || !depositToDelete) return;
-    try {
-      await depositService.deleteDeposit(depositToDelete.id);
-      toast.success("Deposit deleted successfully");
-      await fetchData();
-      setIsDeleteModalOpen(false);
-      setDepositToDelete(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete deposit");
-      console.error(error);
-    }
+    await deleteDeposit.mutateAsync(depositToDelete.id);
+    setIsDeleteModalOpen(false);
+    setDepositToDelete(null);
   };
 
   const membersWithDue = memberBalances.filter((m) => m.dueAmount > 0);
@@ -539,7 +462,7 @@ export function DepositsPage() {
                   />
                 </div>
                 <div className="mt-4">
-                  <Button type="submit" isLoading={isSubmitting}>
+                  <Button type="submit" isLoading={addDeposit.isPending}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Deposit
                   </Button>
@@ -964,7 +887,7 @@ export function DepositsPage() {
           >
             Cancel
           </Button>
-          <Button type="submit" form="edit-form" isLoading={isSubmitting}>
+          <Button type="submit" form="edit-form" isLoading={updateDeposit.isPending}>
             Update
           </Button>
         </ModalFooter>

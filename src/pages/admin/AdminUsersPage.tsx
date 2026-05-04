@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2, RefreshCw, Search, Trash2, Users } from "lucide-react";
-import { toast } from "sonner";
 import { AdminLayout } from "../../components/admin-layout";
-import { adminUserService, type AdminUserOut } from "../../services/adminService";
 import { formatDistanceToNow } from "../../utils/format.utils";
+import { useAdminUsers, useDeleteAdminUser } from "../../hooks/queries/useAdminQueries";
 
 const ROLE_OPTIONS = ["", "manager", "member", "super_admin"];
 
@@ -14,31 +13,23 @@ function roleBadgeColor(role: string): string {
 }
 
 export function AdminUsersPage() {
-  const [users, setUsers] = useState<AdminUserOut[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const load = () => {
-    setLoading(true);
-    adminUserService
-      .list({ role: roleFilter || undefined, search: search || undefined })
-      .then(setUsers)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  };
+  const { data: users = [], isLoading: loading, refetch: load } = useAdminUsers({
+    role: roleFilter || undefined,
+    search: search || undefined
+  });
 
-  useEffect(() => { load(); }, [search, roleFilter]);
+  const deleteUser = useDeleteAdminUser();
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await adminUserService.delete(id);
-      toast.success(res.message);
+      await deleteUser.mutateAsync(id);
       setDeleteId(null);
-      load();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+      // Handled by hook
     }
   };
 
@@ -68,7 +59,7 @@ export function AdminUsersPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="admin-btn admin-btn--ghost" onClick={load}>
+            <button className="admin-btn admin-btn--ghost" onClick={() => load()}>
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
@@ -142,7 +133,7 @@ export function AdminUsersPage() {
                 <button className="admin-btn admin-btn--ghost" onClick={() => setDeleteId(null)}>
                   Cancel
                 </button>
-                <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(deleteId)}>
+                <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(deleteId)} disabled={deleteUser.isPending}>
                   <Trash2 className="w-4 h-4" />
                   Delete
                 </button>

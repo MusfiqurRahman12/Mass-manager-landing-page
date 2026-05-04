@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   Check,
   CreditCard,
@@ -9,13 +9,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 import { AdminLayout } from "../../components/admin-layout";
-import {
-  adminPackageService,
-  type AdminPackage,
-  type PackageInput,
-} from "../../services/adminService";
+import { type AdminPackage, type PackageInput } from "../../services/adminService";
+import { useAdminPackages, useCreatePackage, useUpdatePackage, useDeletePackage } from "../../hooks/queries/useAdminQueries";
 
 const defaultForm: PackageInput = {
   name: "",
@@ -97,19 +93,15 @@ function PackageCard({
 }
 
 export function AdminPackagesPage() {
-  const [packages, setPackages] = useState<AdminPackage[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<PackageInput>(defaultForm);
-  const [submitting, setSubmitting] = useState(false);
 
-  const load = () => {
-    setLoading(true);
-    adminPackageService.list().then(setPackages).catch((e) => toast.error(e.message)).finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, []);
+  const { data: packages = [], isLoading: loading } = useAdminPackages();
+  
+  const createPackage = useCreatePackage();
+  const updatePackage = useUpdatePackage();
+  const deletePackage = useDeletePackage();
 
   const openCreate = () => {
     setForm(defaultForm);
@@ -133,32 +125,24 @@ export function AdminPackagesPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     try {
       if (editId) {
-        await adminPackageService.update(editId, form);
-        toast.success("Package updated");
+        await updatePackage.mutateAsync({ id: editId, data: form });
       } else {
-        await adminPackageService.create(form);
-        toast.success("Package created");
+        await createPackage.mutateAsync(form);
       }
       setShowForm(false);
-      load();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setSubmitting(false);
+      // Handled by hook
     }
   };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete package "${name}"?`)) return;
     try {
-      await adminPackageService.delete(id);
-      toast.success("Package deleted");
-      load();
+      await deletePackage.mutateAsync(id);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed");
+      // Handled by hook
     }
   };
 
@@ -284,8 +268,8 @@ export function AdminPackagesPage() {
                   <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setShowForm(false)}>
                     Cancel
                   </button>
-                  <button type="submit" className="admin-btn admin-btn--primary" disabled={submitting}>
-                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  <button type="submit" className="admin-btn admin-btn--primary" disabled={createPackage.isPending || updatePackage.isPending}>
+                    {createPackage.isPending || updatePackage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     {editId ? "Save Changes" : "Create Package"}
                   </button>
                 </div>

@@ -6,9 +6,8 @@ import {
   ChevronRight,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import {
   Button,
   Card,
@@ -19,9 +18,13 @@ import {
   ModalHeader,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
-import { useRequireAuth } from "../hooks";
 import {
-  notificationService,
+  useNotifications,
+  useMarkAsRead,
+  useMarkAllAsRead,
+  useDeleteNotification,
+} from "../hooks/queries/useNotificationQueries";
+import {
   type Notification,
   type NotificationType,
 } from "../services/notificationService";
@@ -89,114 +92,46 @@ const NOTIFICATION_LABELS: Record<NotificationType, string> = {
 const ITEMS_PER_PAGE = 10;
 
 export function NotificationsPage() {
-  const { isReady } = useRequireAuth();
   const navigate = useNavigate();
-
-  // State
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState<Notification | null>(null);
-
-  // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
   const [filterUnread, setFilterUnread] = useState(false);
 
-  // Fetch notifications
-  const fetchNotifications = async () => {
-    setIsLoading(true);
-    try {
-      const data = await notificationService.getNotifications({
-        limit: 100,
-        unread_only: filterUnread,
-      });
-      setNotifications(data);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load notifications");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ── Queries ────────────────────────────────────────────────────────────────
+  const { data: notifications = [] as Notification[], isLoading } = useNotifications({
+    limit: 100,
+    unread_only: filterUnread,
+  });
 
-  useEffect(() => {
-    if (isReady) {
-      fetchNotifications();
-    }
-  }, [isReady, filterUnread]);
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  const markAsRead = useMarkAsRead();
+  const markAllAsRead = useMarkAllAsRead();
+  const deleteNotification = useDeleteNotification();
 
-  // Pagination
+  // Derived
   const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
-  const paginatedNotifications = useMemo(() => {
-    return notifications.slice(
-      (currentPage - 1) * ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE
-    );
-  }, [notifications, currentPage]);
+  const paginatedNotifications = useMemo(
+    () => notifications.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [notifications, currentPage]
+  );
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.is_read).length, [notifications]);
 
-  const unreadCount = useMemo(() => {
-    return notifications.filter((n) => !n.is_read).length;
-  }, [notifications]);
-
-  // Handlers
-  const handleMarkAsRead = async (notification: Notification) => {
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleMarkAsRead = (notification: Notification) => {
     if (notification.is_read) return;
-
-    try {
-      await notificationService.updateNotification(notification.id, true);
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notification.id ? { ...n, is_read: true } : n
-        )
-      );
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to mark as read");
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    if (unreadCount === 0) return;
-
-    setIsSubmitting(true);
-    try {
-      await notificationService.markAllAsRead();
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, is_read: true }))
-      );
-      toast.success("All notifications marked as read");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to mark all as read");
-    } finally {
-      setIsSubmitting(false);
-    }
+    markAsRead.mutate({ id: notification.id, isRead: true });
   };
 
   const handleDelete = async () => {
     if (!notificationToDelete) return;
-
-    setIsSubmitting(true);
-    try {
-      await notificationService.deleteNotification(notificationToDelete.id);
-      setNotifications((prev) =>
-        prev.filter((n) => n.id !== notificationToDelete.id)
-      );
-      toast.success("Notification deleted");
-      setShowDeleteModal(false);
-      setNotificationToDelete(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete notification");
-    } finally {
-      setIsSubmitting(false);
-    }
+    await deleteNotification.mutateAsync(notificationToDelete.id);
+    setShowDeleteModal(false);
+    setNotificationToDelete(null);
   };
 
   const handleNotificationClick = (notification: Notification) => {
-    if (!notification.is_read) {
-      handleMarkAsRead(notification);
-    }
-
-    // Navigate based on type
+    if (!notification.is_read) handleMarkAsRead(notification);
     switch (notification.type) {
       case "expense_added":
       case "expense_updated":
@@ -239,7 +174,6 @@ export function NotificationsPage() {
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-
     if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
@@ -251,7 +185,7 @@ export function NotificationsPage() {
     });
   };
 
-  if (!isReady || isLoading) {
+  if (isLoading) {
     return (
       <MainLayout>
         <LoadingSpinner fullScreen message="Loading notifications..." />
@@ -265,14 +199,10 @@ export function NotificationsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-              Notifications
-            </h1>
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Notifications</h1>
             <p className="text-neutral-600 dark:text-neutral-400 mt-1">
               {unreadCount > 0
-                ? `You have ${unreadCount} unread notification${
-                    unreadCount === 1 ? "" : "s"
-                  }`
+                ? `You have ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}`
                 : "You're all caught up!"}
             </p>
           </div>
@@ -280,8 +210,8 @@ export function NotificationsPage() {
             {unreadCount > 0 && (
               <Button
                 variant="outline"
-                onClick={handleMarkAllAsRead}
-                isLoading={isSubmitting}
+                onClick={() => markAllAsRead.mutate()}
+                isLoading={markAllAsRead.isPending}
                 className="flex items-center gap-2"
               >
                 <CheckCheck className="w-4 h-4" />
@@ -293,12 +223,10 @@ export function NotificationsPage() {
 
         {/* Filters */}
         <div className="flex items-center gap-4 bg-white dark:bg-neutral-800 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700">
-          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Filter:
-          </span>
+          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Filter:</span>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setFilterUnread(false)}
+              onClick={() => { setFilterUnread(false); setCurrentPage(1); }}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 !filterUnread
                   ? "bg-primary text-white"
@@ -308,7 +236,7 @@ export function NotificationsPage() {
               All
             </button>
             <button
-              onClick={() => setFilterUnread(true)}
+              onClick={() => { setFilterUnread(true); setCurrentPage(1); }}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filterUnread
                   ? "bg-primary text-white"
@@ -330,13 +258,9 @@ export function NotificationsPage() {
           {notifications.length === 0 ? (
             <div className="p-12 text-center">
               <Bell className="w-16 h-16 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
-              <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
-                No notifications
-              </h3>
+              <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">No notifications</h3>
               <p className="text-neutral-500 dark:text-neutral-400">
-                {filterUnread
-                  ? "You have no unread notifications"
-                  : "You don't have any notifications yet"}
+                {filterUnread ? "You have no unread notifications" : "You don't have any notifications yet"}
               </p>
             </div>
           ) : (
@@ -346,54 +270,32 @@ export function NotificationsPage() {
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={`p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors group ${
-                    !notification.is_read
-                      ? "bg-primary/5 dark:bg-primary/10"
-                      : ""
+                    !notification.is_read ? "bg-primary/5 dark:bg-primary/10" : ""
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    {/* Icon */}
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 ${
-                        NOTIFICATION_COLORS[notification.type]
-                      }`}
-                    >
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 ${NOTIFICATION_COLORS[notification.type]}`}>
                       {NOTIFICATION_ICONS[notification.type]}
                     </div>
-
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white">
-                              {notification.title}
-                            </h3>
-                            {!notification.is_read && (
-                              <span className="w-2 h-2 bg-primary rounded-full"></span>
-                            )}
+                            <h3 className="font-semibold text-neutral-900 dark:text-white">{notification.title}</h3>
+                            {!notification.is_read && <span className="w-2 h-2 bg-primary rounded-full" />}
                           </div>
-                          <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-                            {notification.body}
-                          </p>
+                          <p className="text-neutral-600 dark:text-neutral-400 mt-1">{notification.body}</p>
                           <div className="flex items-center gap-3 mt-2">
-                            <span className="text-xs text-neutral-400">
-                              {formatTime(notification.created_at)}
-                            </span>
+                            <span className="text-xs text-neutral-400">{formatTime(notification.created_at)}</span>
                             <span className="text-xs px-2 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded-full text-neutral-500">
                               {NOTIFICATION_LABELS[notification.type]}
                             </span>
                           </div>
                         </div>
-
-                        {/* Actions */}
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {!notification.is_read && (
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMarkAsRead(notification);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); handleMarkAsRead(notification); }}
                               className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg text-neutral-600 dark:text-neutral-400"
                               title="Mark as read"
                             >
@@ -426,8 +328,7 @@ export function NotificationsPage() {
           <div className="flex items-center justify-between bg-white dark:bg-neutral-800 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-              {Math.min(currentPage * ITEMS_PER_PAGE, notifications.length)} of{" "}
-              {notifications.length} notifications
+              {Math.min(currentPage * ITEMS_PER_PAGE, notifications.length)} of {notifications.length} notifications
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -437,13 +338,9 @@ export function NotificationsPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <span className="px-4 py-2 text-sm font-medium">
-                Page {currentPage} of {totalPages}
-              </span>
+              <span className="px-4 py-2 text-sm font-medium">Page {currentPage} of {totalPages}</span>
               <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-lg border border-neutral-300 dark:border-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-700"
               >
@@ -456,32 +353,18 @@ export function NotificationsPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && notificationToDelete && (
-        <Modal 
-          isOpen={showDeleteModal} 
-          onClose={() => setShowDeleteModal(false)}
-        >
+        <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
           <ModalHeader>Delete Notification</ModalHeader>
           <ModalBody>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Are you sure you want to delete this notification? This action
-              cannot be undone.
+              Are you sure you want to delete this notification? This action cannot be undone.
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteModal(false);
-                setNotificationToDelete(null);
-              }}
-            >
+            <Button variant="outline" onClick={() => { setShowDeleteModal(false); setNotificationToDelete(null); }}>
               Cancel
             </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              isLoading={isSubmitting}
-            >
+            <Button variant="danger" onClick={handleDelete} isLoading={deleteNotification.isPending}>
               Delete
             </Button>
           </ModalFooter>

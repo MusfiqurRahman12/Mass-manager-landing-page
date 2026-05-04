@@ -1,13 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, MessageSquare, Send, Shield } from "lucide-react";
-import { toast } from "sonner";
 import { AdminLayout } from "../../components/admin-layout";
-import {
-  adminTicketService,
-  type AdminTicketDetail,
-} from "../../services/adminService";
 import { formatDistanceToNow } from "../../utils/format.utils";
+import { useAdminTicketDetail, useReplyTicket, useUpdateTicketStatus } from "../../hooks/queries/useAdminQueries";
 
 const STATUS_OPTIONS = ["open", "in_progress", "resolved", "closed"];
 
@@ -20,47 +16,31 @@ function statusBadge(status: string): string {
 
 export function AdminTicketDetailPage() {
   const { ticketId } = useParams<{ ticketId: string }>();
-  const [ticket, setTicket] = useState<AdminTicketDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [replyBody, setReplyBody] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const load = () => {
-    if (!ticketId) return;
-    adminTicketService
-      .get(ticketId)
-      .then(setTicket)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [ticketId]);
+  const { data: ticket, isLoading: loading } = useAdminTicketDetail(ticketId!);
+  
+  const replyTicket = useReplyTicket();
+  const updateStatus = useUpdateTicketStatus();
 
   const handleReply = async (e: FormEvent) => {
     e.preventDefault();
     if (!ticketId || !replyBody.trim()) return;
-    setSubmitting(true);
     try {
-      await adminTicketService.reply(ticketId, replyBody.trim());
-      toast.success("Reply posted");
+      await replyTicket.mutateAsync({ id: ticketId, body: replyBody.trim() });
       setReplyBody("");
-      load();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to reply");
-    } finally {
-      setSubmitting(false);
+      // Handled by hook
     }
   };
 
   const handleStatusChange = async (newStatus: string) => {
     if (!ticketId) return;
     try {
-      await adminTicketService.updateStatus(ticketId, newStatus);
-      toast.success("Status updated");
-      load();
+      await updateStatus.mutateAsync({ id: ticketId, status: newStatus });
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to update");
+      // Handled by hook
     }
   };
 
@@ -180,9 +160,9 @@ export function AdminTicketDetailPage() {
               <button
                 type="submit"
                 className="admin-btn admin-btn--primary"
-                disabled={submitting}
+                disabled={replyTicket.isPending}
               >
-                {submitting ? (
+                {replyTicket.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Send className="w-4 h-4" />

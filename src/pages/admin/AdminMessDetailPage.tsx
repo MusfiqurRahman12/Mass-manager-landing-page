@@ -1,24 +1,13 @@
-import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Loader2, Mail, Users } from "lucide-react";
 import { AdminLayout } from "../../components/admin-layout";
-import { adminMessService, type AdminMess } from "../../services/adminService";
-import { toast } from "sonner";
+import { useAdminMessDetail } from "../../hooks/queries/useAdminQueries";
 
 export function AdminMessDetailPage() {
   const { messId } = useParams<{ messId: string }>();
-  const [mess, setMess] = useState<AdminMess | null>(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!messId) return;
-    adminMessService
-      .get(messId)
-      .then(setMess)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  }, [messId]);
+  const { data: mess, isLoading: loading } = useAdminMessDetail(messId!);
 
   if (loading) {
     return (

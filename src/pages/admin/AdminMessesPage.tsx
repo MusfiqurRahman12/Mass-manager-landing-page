@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Building2,
@@ -10,13 +10,10 @@ import {
   Play,
   RefreshCw,
 } from "lucide-react";
-import { toast } from "sonner";
 import { AdminLayout } from "../../components/admin-layout";
-import {
-  adminMessService,
-  type AdminMess,
-} from "../../services/adminService";
+import { type AdminMess } from "../../services/adminService";
 import { formatDistanceToNow } from "../../utils/format.utils";
+import { useAdminMesses, useSuspendMess, useActivateMess, useDeleteAdminMess } from "../../hooks/queries/useAdminQueries";
 
 function StatusBadge({ suspended }: { suspended: boolean }) {
   return (
@@ -27,42 +24,34 @@ function StatusBadge({ suspended }: { suspended: boolean }) {
 }
 
 export function AdminMessesPage() {
-  const [messes, setMesses] = useState<AdminMess[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const load = () => {
-    setLoading(true);
-    adminMessService
-      .list({ search: search || undefined })
-      .then(setMesses)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [search]);
+  const { data: messes = [], isLoading: loading, refetch: load } = useAdminMesses({ search: search || undefined });
+  
+  const suspendMess = useSuspendMess();
+  const activateMess = useActivateMess();
+  const deleteMess = useDeleteAdminMess();
 
   const handleSuspend = async (mess: AdminMess) => {
     try {
-      const fn = mess.is_suspended ? adminMessService.activate : adminMessService.suspend;
-      const res = await fn(mess.id);
-      toast.success(res.message);
-      load();
+      if (mess.is_suspended) {
+        await activateMess.mutateAsync(mess.id);
+      } else {
+        await suspendMess.mutateAsync(mess.id);
+      }
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Action failed");
+      // Error handled by hook
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await adminMessService.delete(id);
-      toast.success(res.message);
+      await deleteMess.mutateAsync(id);
       setDeleteId(null);
-      load();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Delete failed");
+      // Error handled by hook
     }
   };
 
@@ -81,7 +70,7 @@ export function AdminMessesPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="admin-btn admin-btn--ghost" onClick={load}>
+            <button className="admin-btn admin-btn--ghost" onClick={() => load()}>
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
@@ -149,6 +138,7 @@ export function AdminMessesPage() {
                             className={`admin-icon-btn ${mess.is_suspended ? "admin-icon-btn--success" : "admin-icon-btn--warning"}`}
                             title={mess.is_suspended ? "Activate" : "Suspend"}
                             onClick={() => handleSuspend(mess)}
+                            disabled={suspendMess.isPending || activateMess.isPending}
                           >
                             {mess.is_suspended ? (
                               <Play className="w-4 h-4" />
@@ -160,6 +150,7 @@ export function AdminMessesPage() {
                             className="admin-icon-btn admin-icon-btn--danger"
                             title="Delete mess"
                             onClick={() => setDeleteId(mess.id)}
+                            disabled={deleteMess.isPending}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -192,6 +183,7 @@ export function AdminMessesPage() {
                 <button
                   className="admin-btn admin-btn--danger"
                   onClick={() => handleDelete(deleteId)}
+                  disabled={deleteMess.isPending}
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete

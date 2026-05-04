@@ -16,16 +16,11 @@ import { MainLayout } from "../components/layout";
 import { PendingTransferCard } from "../components/settings/PendingTransferCard";
 import { useAuth } from "../context";
 import { useRequireAuth } from "../hooks";
-import { type Member, memberService } from "../services/memberService";
-import {
-  type Mess,
-  messService,
-  type UpdateMessPayload,
-} from "../services/messService";
-import {
-  type TransferRequest,
-  transferService,
-} from "../services/transferService";
+
+import { type UpdateMessPayload } from "../services/messService";
+
+import { useMembers } from "../hooks/queries/useMemberQueries";
+import { useMess, useUpdateMess, useDeleteMess, usePendingTransfers, useRequestTransfer } from "../hooks/queries/useMessQueries";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -49,17 +44,17 @@ export function SettingsPage() {
   const { isReady, user } = useRequireAuth();
   const { user: authUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [mess, setMess] = useState<Mess | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isTransferring, setIsTransferring] = useState(false);
+  const { data: mess, isLoading: isMessLoading } = useMess();
+  const { data: members = [], isLoading: isMembersLoading } = useMembers();
+  const { data: pendingTransfers = [], refetch: loadPendingTransfers } = usePendingTransfers();
+  
+  const updateMess = useUpdateMess();
+  const deleteMess = useDeleteMess();
+  const requestTransfer = useRequestTransfer();
+
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [pendingTransfers, setPendingTransfers] = useState<TransferRequest[]>(
-    [],
-  );
 
   // Profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -118,30 +113,13 @@ export function SettingsPage() {
     });
   };
 
-  const loadPendingTransfers = async () => {
-    try {
-      const transfers = await transferService.getPendingTransfers();
-      setPendingTransfers(transfers);
-    } catch {
-      // Silently fail - user might not have any pending transfers
-      setPendingTransfers([]);
-    }
-  };
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [messData, membersData] = await Promise.all([
-        messService.getMess(),
-        memberService.getMembers(),
-      ]);
-      setMess(messData);
-      setMembers(membersData);
+  useEffect(() => {
+    if (isReady && mess) {
       setFormData({
-        name: messData.name,
-        address: messData.address || "",
-        automatic_market_date: messData.automatic_market_date || "Friday",
-        currency: messData.currency || "BDT",
+        name: mess.name,
+        address: mess.address || "",
+        automatic_market_date: mess.automatic_market_date || "Friday",
+        currency: mess.currency || "BDT",
       });
 
       // Load profile data from user
@@ -168,22 +146,8 @@ export function SettingsPage() {
       if (savedNotifications) {
         setNotifications(JSON.parse(savedNotifications));
       }
-
-      // Load pending transfer requests
-      await loadPendingTransfers();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load settings");
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    if (isReady) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady]);
+  }, [isReady, mess, authUser]);
 
   const handleSave = async () => {
     if (!formData.name?.trim()) {
@@ -191,10 +155,8 @@ export function SettingsPage() {
       return;
     }
 
-    setIsSaving(true);
     try {
-      const updated = await messService.updateMess(formData);
-      setMess(updated);
+      const updated = await updateMess.mutateAsync(formData);
       
       // Also update the global currency formatting
       if (updated.currency) {
@@ -202,12 +164,8 @@ export function SettingsPage() {
           setGlobalCurrency(updated.currency as string);
         });
       }
-      
-      toast.success("Settings saved successfully");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save settings");
-    } finally {
-      setIsSaving(false);
+      // Error is handled by hook
     }
   };
 
@@ -249,34 +207,24 @@ export function SettingsPage() {
       return;
     }
 
-    setIsTransferring(true);
     try {
-      // Use the new request workflow (Section 10.1)
-      const response = await transferService.requestTransfer({
+      await requestTransfer.mutateAsync({
         target_member_id: selectedMemberId,
       });
-      toast.success(response.message || "Transfer request sent successfully");
       setShowTransferModal(false);
       setSelectedMemberId("");
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to send transfer request",
-      );
-    } finally {
-      setIsTransferring(false);
+      // Error handled by hook
     }
   };
 
   const handleDeleteMess = async () => {
     try {
-      await messService.deleteMess();
-      toast.success("Mess deleted successfully");
+      await deleteMess.mutateAsync();
       logout();
       navigate("/");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete mess");
+      // Error handled by hook
     }
   };
 
@@ -316,6 +264,8 @@ export function SettingsPage() {
 
   const isManager = user?.role === "manager";
   const otherMembers = members.filter((m) => m.user_id !== user?.id);
+
+  const isLoading = isMessLoading || isMembersLoading;
 
   if (!isReady || isLoading) {
     return (
@@ -685,7 +635,7 @@ export function SettingsPage() {
               <div className="pt-4">
                 <Button
                   onClick={handleSave}
-                  isLoading={isSaving}
+                  isLoading={updateMess.isPending}
                   className="px-6"
                 >
                   Save Changes
@@ -830,7 +780,7 @@ export function SettingsPage() {
           </Button>
           <Button
             onClick={handleTransferManager}
-            isLoading={isTransferring}
+            isLoading={requestTransfer.isPending}
             disabled={!selectedMemberId || otherMembers.length === 0}
           >
             Send Request
@@ -852,7 +802,7 @@ export function SettingsPage() {
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDeleteMess}>
+          <Button variant="danger" onClick={handleDeleteMess} isLoading={deleteMess.isPending}>
             Delete
           </Button>
         </ModalFooter>

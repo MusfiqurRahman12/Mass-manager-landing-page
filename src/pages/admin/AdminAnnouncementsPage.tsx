@@ -1,28 +1,23 @@
 import { useState, type FormEvent } from "react";
 import { Bell, Send, Megaphone } from "lucide-react";
-import { toast } from "sonner";
 import { AdminLayout } from "../../components/admin-layout";
-import { adminAnnouncementService } from "../../services/adminService";
+import { useBroadcastAnnouncement } from "../../hooks/queries/useAdminQueries";
 import { Card, CardHeader, CardBody, Input, Button } from "../../components/common";
 
 export function AdminAnnouncementsPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const broadcast = useBroadcastAnnouncement();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
-    setSubmitting(true);
     try {
-      const res = await adminAnnouncementService.broadcast(title.trim(), body.trim());
-      toast.success(res.message);
+      await broadcast.mutateAsync({ title: title.trim(), body: body.trim() });
       setTitle("");
       setBody("");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Broadcast failed");
-    } finally {
-      setSubmitting(false);
+      // Handled by hook
     }
   };
 
@@ -76,7 +71,7 @@ export function AdminAnnouncementsPage() {
                 <Button
                   type="submit"
                   className="w-full"
-                  isLoading={submitting}
+                  isLoading={broadcast.isPending}
                   disabled={!title.trim() || !body.trim()}
                 >
                   <Send className="w-4 h-4 mr-2" />

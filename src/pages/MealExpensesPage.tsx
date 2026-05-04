@@ -10,7 +10,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   Button,
@@ -30,13 +30,16 @@ import { useAuth } from "../context";
 import { useForm } from "../hooks/useForm";
 import type {
   MealExpense,
-  MealExpensesResponse,
   AddMealExpensePayload,
-  UpdateMealExpensePayload,
   Member,
 } from "../services";
-import { expenseApi, memberService } from "../services";
+
+import { expenseApi } from "../services";
 import { formatCurrency } from "../utils/format.utils";
+import { useMealExpenses, useAddMealExpense, useUpdateMealExpense, useDeleteMealExpense } from "../hooks/queries/useExpenseQueries";
+import { useMembers } from "../hooks/queries/useMemberQueries";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 interface MealExpenseFormValues {
   amount: string;
@@ -51,50 +54,29 @@ const ITEMS_PER_PAGE = 10;
 export function MealExpensesPage() {
   const { user } = useAuth();
   const isManager = user?.role === "manager";
+  const qc = useQueryClient();
 
-  // State
-  const [mealData, setMealData] = useState<MealExpensesResponse | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // UI-only state
   const [selectedExpense, setSelectedExpense] = useState<MealExpense | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<MealExpense | null>(null);
-
-  // Approve modal state
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [expenseToApprove, setExpenseToApprove] = useState<MealExpense | null>(null);
   const [addDeposit, setAddDeposit] = useState(true);
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch data
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [data, membersData] = await Promise.all([
-        expenseApi.getMealExpenses(),
-        isManager ? memberService.getMembers() : Promise.resolve([]),
-      ]);
-      setMealData(data);
-      if (isManager) {
-        setMembers(membersData);
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load meal expenses");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ── Data Queries ──────────────────────────────────────────────────────────
+  const { data: mealData, isLoading } = useMealExpenses();
+  const { data: members = [] as Member[] } = useMembers();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  const addMealExpense = useAddMealExpense();
+  const updateMealExpense = useUpdateMealExpense();
+  const deleteMealExpense = useDeleteMealExpense();
 
-  // Paginated expenses
+
+
   const expenses = mealData?.expenses || [];
   const totalPages = Math.ceil(expenses.length / ITEMS_PER_PAGE);
   const paginatedExpenses = expenses.slice(
@@ -102,7 +84,6 @@ export function MealExpensesPage() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  // Forms
   const addForm = useForm<MealExpenseFormValues>({
     initialValues: {
       amount: "",
@@ -115,118 +96,70 @@ export function MealExpensesPage() {
       const errors: Record<string, string> = {};
       if (!values.amount) errors.amount = "Please enter an amount";
       const amount = parseFloat(values.amount);
-      if (isNaN(amount) || amount <= 0) {
-        errors.amount = "Amount must be greater than 0";
-      }
+      if (isNaN(amount) || amount <= 0) errors.amount = "Amount must be greater than 0";
       if (!values.expense_date) errors.expense_date = "Please select a date";
-      if (!values.description.trim()) {
-        errors.description = "Please enter a description";
-      }
+      if (!values.description.trim()) errors.description = "Please enter a description";
       return errors;
     },
     onSubmit: async (values) => {
-      setIsSubmitting(true);
-      try {
-        const payload: AddMealExpensePayload = {
-          amount: parseFloat(values.amount),
-          description: values.description.trim(),
-          expense_date: values.expense_date,
-        };
-        if (isManager && values.member_id) {
-          payload.member_id = values.member_id;
-          payload.add_deposit = values.add_deposit;
-        }
-        await expenseApi.addMealExpense(payload);
-        toast.success("Meal expense added successfully");
-        await fetchData();
-        addForm.resetForm();
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to add meal expense");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
+      const payload: AddMealExpensePayload = {
+        amount: parseFloat(values.amount),
+        description: values.description.trim(),
+        expense_date: values.expense_date,
+      };
+      if (isManager && values.member_id) {
+        payload.member_id = values.member_id;
+        payload.add_deposit = values.add_deposit;
       }
+      await addMealExpense.mutateAsync(payload);
+      addForm.resetForm();
     },
   });
 
   const editForm = useForm<MealExpenseFormValues>({
-    initialValues: {
-      amount: "",
-      expense_date: "",
-      description: "",
-    },
+    initialValues: { amount: "", expense_date: "", description: "" },
     validate: (values) => {
       const errors: Record<string, string> = {};
       if (!values.amount) errors.amount = "Please enter an amount";
       const amount = parseFloat(values.amount);
-      if (isNaN(amount) || amount <= 0) {
-        errors.amount = "Amount must be greater than 0";
-      }
+      if (isNaN(amount) || amount <= 0) errors.amount = "Amount must be greater than 0";
       if (!values.expense_date) errors.expense_date = "Please select a date";
-      if (!values.description.trim()) {
-        errors.description = "Please enter a description";
-      }
+      if (!values.description.trim()) errors.description = "Please enter a description";
       return errors;
     },
     onSubmit: async (values) => {
       if (!isManager || !selectedExpense) return;
-      setIsSubmitting(true);
-      try {
-        const payload: UpdateMealExpensePayload = {
+      await updateMealExpense.mutateAsync({
+        id: selectedExpense.id,
+        payload: {
           amount: parseFloat(values.amount),
           description: values.description.trim(),
           expense_date: values.expense_date,
-        };
-        await expenseApi.updateMealExpense(selectedExpense.id, payload);
-        toast.success("Meal expense updated successfully");
-        await fetchData();
-        setIsEditModalOpen(false);
-        setSelectedExpense(null);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to update meal expense");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
+        },
+      });
+      setIsEditModalOpen(false);
+      setSelectedExpense(null);
     },
   });
 
-  // Handlers
   const handleEdit = (expense: MealExpense) => {
-    if (!isManager) {
-      toast.error("Only managers can edit meal expenses");
-      return;
-    }
+    if (!isManager) { toast.error("Only managers can edit meal expenses"); return; }
     setSelectedExpense(expense);
-    editForm.setValues({
-      amount: expense.amount.toString(),
-      expense_date: expense.expense_date,
-      description: expense.description,
-    });
+    editForm.setValues({ amount: expense.amount.toString(), expense_date: expense.expense_date, description: expense.description });
     setIsEditModalOpen(true);
   };
 
   const handleDelete = (expense: MealExpense) => {
-    if (!isManager) {
-      toast.error("Only managers can delete meal expenses");
-      return;
-    }
+    if (!isManager) { toast.error("Only managers can delete meal expenses"); return; }
     setExpenseToDelete(expense);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!isManager || !expenseToDelete) return;
-    try {
-      await expenseApi.deleteMealExpense(expenseToDelete.id);
-      toast.success("Meal expense deleted successfully");
-      await fetchData();
-      setIsDeleteModalOpen(false);
-      setExpenseToDelete(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete meal expense");
-      console.error(error);
-    }
+    await deleteMealExpense.mutateAsync(expenseToDelete.id);
+    setIsDeleteModalOpen(false);
+    setExpenseToDelete(null);
   };
 
   const openApproveModal = (expense: MealExpense) => {
@@ -238,22 +171,14 @@ export function MealExpensesPage() {
 
   const confirmApprove = async () => {
     if (!isManager || !expenseToApprove) return;
-    setIsSubmitting(true);
     try {
       await expenseApi.approveMealExpense(expenseToApprove.id, addDeposit);
-      toast.success(
-        addDeposit
-          ? "Expense approved & reimbursement deposit added"
-          : "Expense approved (no deposit added)"
-      );
-      await fetchData();
+      toast.success(addDeposit ? "Expense approved & reimbursement deposit added" : "Expense approved (no deposit added)");
+      qc.invalidateQueries({ queryKey: ["expenses"] });
       setIsApproveModalOpen(false);
       setExpenseToApprove(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to approve meal expense");
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -262,10 +187,9 @@ export function MealExpensesPage() {
     try {
       await expenseApi.rejectMealExpense(expense.id);
       toast.success("Meal expense rejected successfully");
-      await fetchData();
+      qc.invalidateQueries({ queryKey: ["expenses"] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to reject meal expense");
-      console.error(error);
     }
   };
 
@@ -462,7 +386,7 @@ export function MealExpensesPage() {
                 <div className="flex justify-center pt-2">
                   <Button
                     type="submit"
-                    isLoading={isSubmitting}
+                    isLoading={addMealExpense.isPending}
                     className="w-full md:w-1/3 py-3 text-base font-bold shadow-lg shadow-primary/20"
                     variant="primary"
                   >
@@ -704,7 +628,7 @@ export function MealExpensesPage() {
           >
             Cancel
           </Button>
-          <Button type="submit" form="edit-form" isLoading={isSubmitting}>
+          <Button type="submit" form="edit-form" isLoading={updateMealExpense.isPending}>
             Update
           </Button>
         </ModalFooter>
@@ -779,7 +703,7 @@ export function MealExpensesPage() {
           >
             Cancel
           </Button>
-          <Button onClick={confirmApprove} isLoading={isSubmitting}>
+          <Button onClick={confirmApprove}>
             <CheckCircle className="h-4 w-4 mr-2" />
             Approve
           </Button>

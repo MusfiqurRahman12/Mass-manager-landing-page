@@ -5,12 +5,15 @@ import {
   Routes,
 } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "sonner";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 import { useAuth } from "./context";
 import { LoadingSpinner } from "./components/common/Loader";
+import { queryClient } from "./lib/queryClient";
 
 // Lazy-loaded public & user pages
 const ChatPage = lazy(() => import("./pages/ChatPage").then(m => ({ default: m.ChatPage })));
@@ -68,7 +71,8 @@ function OnboardingRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
       <AdminAuthProvider>
         <Suspense fallback={<LoadingSpinner fullScreen />}>
           <Routes>
@@ -126,7 +130,9 @@ function App() {
 
       {/* Toast Notifications */}
       <Toaster position="top-right" />
-    </Router>
+      </Router>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 

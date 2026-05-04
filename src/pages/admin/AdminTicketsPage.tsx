@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, Loader2, RefreshCw, Ticket } from "lucide-react";
 import { AdminLayout } from "../../components/admin-layout";
-import { adminTicketService, type AdminTicket } from "../../services/adminService";
-import { toast } from "sonner";
 import { formatDistanceToNow } from "../../utils/format.utils";
+import { useAdminTickets } from "../../hooks/queries/useAdminQueries";
 
 const STATUS_OPTIONS = ["", "open", "in_progress", "resolved", "closed"];
 const CATEGORY_OPTIONS = ["", "bug", "billing", "manager_complaint", "general"];
@@ -24,27 +23,16 @@ function priorityBadge(priority: string): string {
 }
 
 export function AdminTicketsPage() {
-  const [tickets, setTickets] = useState<AdminTicket[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const navigate = useNavigate();
 
-  const load = () => {
-    setLoading(true);
-    adminTicketService
-      .list({
-        ticket_status: statusFilter || undefined,
-        category: categoryFilter || undefined,
-        priority: priorityFilter || undefined,
-      })
-      .then(setTickets)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [statusFilter, categoryFilter, priorityFilter]);
+  const { data: tickets = [], isLoading: loading, refetch: load } = useAdminTickets({
+    ticket_status: statusFilter || undefined,
+    category: categoryFilter || undefined,
+    priority: priorityFilter || undefined,
+  });
 
   return (
     <AdminLayout pageTitle="Tickets">
@@ -61,7 +49,7 @@ export function AdminTicketsPage() {
             <select className="admin-select" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
               {PRIORITY_OPTIONS.map((p) => <option key={p} value={p}>{p || "All Priorities"}</option>)}
             </select>
-            <button className="admin-btn admin-btn--ghost" onClick={load}>
+            <button className="admin-btn admin-btn--ghost" onClick={() => load()}>
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>

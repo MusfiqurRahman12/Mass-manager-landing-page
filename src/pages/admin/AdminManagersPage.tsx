@@ -1,25 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2, RefreshCw, Search, UserSquare2 } from "lucide-react";
 import { AdminLayout } from "../../components/admin-layout";
-import { adminManagerService, type AdminManager } from "../../services/adminService";
-import { toast } from "sonner";
 import { formatDistanceToNow } from "../../utils/format.utils";
+import { useAdminManagers } from "../../hooks/queries/useAdminQueries";
 
 export function AdminManagersPage() {
-  const [managers, setManagers] = useState<AdminManager[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
-  const load = () => {
-    setLoading(true);
-    adminManagerService
-      .list({ search: search || undefined })
-      .then(setManagers)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [search]);
+  const { data: managers = [], isLoading: loading, refetch: load } = useAdminManagers({ search: search || undefined });
 
   return (
     <AdminLayout pageTitle="Managers">
@@ -36,7 +23,7 @@ export function AdminManagersPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="admin-btn admin-btn--ghost" onClick={load}>
+            <button className="admin-btn admin-btn--ghost" onClick={() => load()}>
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
