@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ClipboardList, Loader2, RefreshCw, Search } from "lucide-react";
 import { AdminLayout } from "../../components/admin-layout";
-import { adminAuditService, type AuditLogEntry } from "../../services/adminService";
-import { toast } from "sonner";
 import { formatDistanceToNow } from "../../utils/format.utils";
+import { useAdminAudit } from "../../hooks/queries/useAdminQueries";
 
 function actionBadge(action: string): string {
   if (action.includes("DELETE")) return "admin-badge--danger";
@@ -13,25 +12,14 @@ function actionBadge(action: string): string {
 }
 
 export function AdminAuditLogPage() {
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState("");
   const [entityFilter, setEntityFilter] = useState("");
 
-  const load = () => {
-    setLoading(true);
-    adminAuditService
-      .list({
-        action: actionFilter || undefined,
-        entity_type: entityFilter || undefined,
-        limit: 100,
-      })
-      .then(setLogs)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [actionFilter, entityFilter]);
+  const { data: logs = [], isLoading: loading, refetch: load } = useAdminAudit({
+    action: actionFilter || undefined,
+    entity_type: entityFilter || undefined,
+    limit: 100,
+  });
 
   return (
     <AdminLayout pageTitle="Audit Log">
@@ -55,7 +43,7 @@ export function AdminAuditLogPage() {
               onChange={(e) => setEntityFilter(e.target.value)}
               style={{ maxWidth: "140px" }}
             />
-            <button className="admin-btn admin-btn--ghost" onClick={load}>
+            <button className="admin-btn admin-btn--ghost" onClick={() => load()}>
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>

@@ -1,20 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Badge, Button, Card, LoadingSpinner } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useRequireAuth } from "../hooks";
-import { depositService, type Deposit } from "../services/depositService";
-import { mealService, type Meal } from "../services/mealService";
-import { expenseApi, type HomeRentExpense, type UtilityExpense, type MemberSummary as ExpenseMemberSummary, type MealExpense } from "../services/expenseApi";
 import { pdfService } from "../services/pdfService";
-import { memberService, type Member } from "../services/memberService";
-import { monthService, type Month } from "../services/monthService";
+import { type Member } from "../services/memberService";
 import { formatCurrency } from "../utils/format.utils";
 
-
-
-
+import { useMonthDetails } from "../hooks/queries/useMonthQueries";
+import { useMembers } from "../hooks/queries/useMemberQueries";
+import { useMealExpenses, useExpenseSummaryByMembers, useDeposits } from "../hooks/queries/useExpenseQueries";
+import { useMeals } from "../hooks/queries/useMealQueries";
 interface MemberSummary {
   member: Member;
   totalMeals: number;
@@ -37,60 +34,26 @@ export function MonthDetailsPage() {
   const isManager = user?.role === "manager";
   const navigate = useNavigate();
   const { monthId } = useParams<{ monthId: string }>();
-  const [month, setMonth] = useState<Month | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [mealExpenses, setMealExpenses] = useState<MealExpense[]>([]);
-  const [rentExpenses, setRentExpenses] = useState<HomeRentExpense[]>([]);
-  const [utilityExpenses, setUtilityExpenses] = useState<UtilityExpense[]>([]);
-  const [memberExpenseSummaries, setMemberExpenseSummaries] = useState<ExpenseMemberSummary[]>([]);
-  const [mealSummary, setMealSummary] = useState<{ total_meal_expenses: number; total_meals: number; meal_rate: number } | null>(null);
-  const [deposits, setDeposits] = useState<Deposit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: month, isLoading: monthLoading } = useMonthDetails(monthId!);
+  const { data: members = [], isLoading: membersLoading } = useMembers();
+  const { data: meals = [], isLoading: mealsLoading } = useMeals({ month_id: monthId });
+  const { data: mealSummaryData, isLoading: mealExpensesLoading } = useMealExpenses(monthId);
+  const { data: expenseSummary, isLoading: summaryLoading } = useExpenseSummaryByMembers(monthId);
+  const { data: deposits = [], isLoading: depositsLoading } = useDeposits({ month_id: monthId });
+
+  const mealSummary = mealSummaryData ? {
+    total_meal_expenses: mealSummaryData.total_meal_expenses,
+    total_meals: mealSummaryData.total_meals,
+    meal_rate: mealSummaryData.meal_rate
+  } : null;
+
+  const mealExpenses = mealSummaryData?.expenses || [];
+  const rentExpenses = expenseSummary?.home_rent_expenses || [];
+  const utilityExpenses = expenseSummary?.utility_expenses || [];
+  const memberExpenseSummaries = expenseSummary?.member_summaries || [];
+
+  const isLoading = monthLoading || membersLoading || mealsLoading || mealExpensesLoading || summaryLoading || depositsLoading;
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
-
-  useEffect(() => {
-    if (isReady && monthId) {
-      loadMonthData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady, monthId]);
-
-  const loadMonthData = async () => {
-    setIsLoading(true);
-    try {
-      const [monthData, membersData] = await Promise.all([
-        monthService.getMonthDetails(monthId!),
-        memberService.getMembers(),
-      ]);
-
-      setMonth(monthData);
-      setMembers(membersData);
-
-      const [mealsData, mealSummaryData, expenseSummary, depositsData] = await Promise.all([
-        mealService.getMeals({ month_id: monthId }),
-        expenseApi.getMealExpenses(monthId!),
-        expenseApi.getSummaryByMembers(monthId!),
-        depositService.getDeposits({ month_id: monthId }),
-      ]);
-      setMeals(mealsData);
-      setMealSummary({
-        total_meal_expenses: mealSummaryData.total_meal_expenses,
-        total_meals: mealSummaryData.total_meals,
-        meal_rate: mealSummaryData.meal_rate
-      });
-      setMealExpenses(mealSummaryData.expenses);
-      setRentExpenses(expenseSummary.home_rent_expenses);
-      setUtilityExpenses(expenseSummary.utility_expenses);
-      setMemberExpenseSummaries(expenseSummary.member_summaries);
-      setDeposits(depositsData);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load month details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
 
   const getMemberMeals = (memberId: string) => {

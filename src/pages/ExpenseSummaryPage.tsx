@@ -7,8 +7,6 @@ import {
   Utensils,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import {
   Card,
   CardBody,
@@ -17,51 +15,20 @@ import {
 } from "../components/common";
 import { MainLayout } from "../components/layout";
 import type {
-  ExpenseSummaryMembersResponse,
-  ExpenseSummaryTotalsResponse,
-  MealExpensesResponse,
   Meal,
 } from "../services";
-import { expenseApi, mealService } from "../services";
-import { formatCurrency } from "../utils/format.utils";
 
+import { formatCurrency } from "../utils/format.utils";
 import { cn } from "../utils";
+import { useExpenseSummaryByMembers, useExpenseSummaryTotals, useMealExpenses } from "../hooks/queries/useExpenseQueries";
+import { useMeals } from "../hooks/queries/useMealQueries";
 
 export function ExpenseSummaryPage() {
-
-  // State
-  const [membersSummary, setMembersSummary] = useState<ExpenseSummaryMembersResponse | null>(null);
-  const [totals, setTotals] = useState<ExpenseSummaryTotalsResponse | null>(null);
-  const [mealExpenses, setMealExpenses] = useState<MealExpensesResponse | null>(null);
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch data
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [membersData, totalsData, mealData, mealsData] = await Promise.all([
-        expenseApi.getSummaryByMembers(),
-        expenseApi.getSummaryTotals(),
-        expenseApi.getMealExpenses(),
-        mealService.getMeals(),
-      ]);
-      setMembersSummary(membersData);
-      setTotals(totalsData);
-      setMealExpenses(mealData);
-      setMeals(mealsData);
-
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load expense summary");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data: membersSummary, isLoading: membersLoading } = useExpenseSummaryByMembers();
+  const { data: totals, isLoading: totalsLoading } = useExpenseSummaryTotals();
+  const { data: mealExpenses, isLoading: mealExpensesLoading } = useMealExpenses();
+  const { data: meals = [] as Meal[], isLoading: mealsLoading } = useMeals();
+  const isLoading = membersLoading || totalsLoading || mealExpensesLoading || mealsLoading;
 
 
   return (

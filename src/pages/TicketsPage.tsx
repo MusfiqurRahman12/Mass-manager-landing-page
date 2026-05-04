@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   CheckCircle2,
   ChevronDown,
@@ -11,54 +11,9 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 import { MainLayout } from "../components/layout/MainLayout";
-import { useAuth } from "../context";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
-
-function getToken(): string | null {
-  return localStorage.getItem("token");
-}
-function authHeaders() {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${getToken()}`,
-  };
-}
-
-async function req<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({ detail: "Error" }));
-    throw new Error(e.detail);
-  }
-  return res.json();
-}
-
-interface TicketReply {
-  id: string;
-  author_name: string;
-  body: string;
-  is_admin_reply: boolean;
-  created_at: string;
-}
-
-interface TicketOut {
-  id: string;
-  title: string;
-  body: string;
-  category: string;
-  priority: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  reply_count: number;
-}
-
-interface TicketDetail extends TicketOut {
-  replies: TicketReply[];
-}
+import { useTickets, useTicketDetail, useAddTicket } from "../hooks/queries/useTicketQueries";
 
 function StatusIcon({ status }: { status: string }) {
   if (status === "resolved" || status === "closed")
@@ -67,65 +22,35 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 export function TicketsPage() {
-  const { user } = useAuth();
-  const [tickets, setTickets] = useState<TicketOut[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const { data: tickets = [], isLoading: loading } = useTickets();
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<TicketDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const { data: detail, isLoading: detailLoading } = useTicketDetail(expandedId);
+  const addTicket = useAddTicket();
 
-  // New ticket form state
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     title: "",
     body: "",
     category: "general",
     priority: "medium",
   });
-  const [submitting, setSubmitting] = useState(false);
-
-  const loadTickets = () => {
-    setLoading(true);
-    req<TicketOut[]>(`${API_BASE}/api/v1/tickets`, { headers: authHeaders() })
-      .then(setTickets)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { loadTickets(); }, []);
 
   const loadDetail = (id: string) => {
     if (expandedId === id) {
       setExpandedId(null);
-      setDetail(null);
       return;
     }
     setExpandedId(id);
-    setDetail(null);
-    setDetailLoading(true);
-    req<TicketDetail>(`${API_BASE}/api/v1/tickets/${id}`, { headers: authHeaders() })
-      .then(setDetail)
-      .catch((e) => toast.error(e.message))
-      .finally(() => setDetailLoading(false));
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     try {
-      await req(`${API_BASE}/api/v1/tickets`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ ...form, mess_id: user?.mess_id }),
-      });
-      toast.success("Ticket submitted successfully!");
+      await addTicket.mutateAsync(form);
       setShowForm(false);
       setForm({ title: "", body: "", category: "general", priority: "medium" });
-      loadTickets();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to submit");
-    } finally {
-      setSubmitting(false);
+      // Error is handled by hook
     }
   };
 
@@ -219,9 +144,9 @@ export function TicketsPage() {
                 <button 
                   type="submit" 
                   className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors shadow-sm font-medium disabled:opacity-70"
-                  disabled={submitting}
+                  disabled={addTicket.isPending}
                 >
-                  {submitting ? (
+                  {addTicket.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Send className="w-4 h-4" />

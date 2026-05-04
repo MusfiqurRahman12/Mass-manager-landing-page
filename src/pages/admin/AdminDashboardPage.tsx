@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Building2,
   Loader2,
@@ -9,12 +8,8 @@ import {
   Activity,
 } from "lucide-react";
 import { AdminLayout } from "../../components/admin-layout";
-import {
-  adminStatsService,
-  type OverviewStats,
-  type ActivityItem,
-} from "../../services/adminService";
 import { formatDistanceToNow } from "../../utils/format.utils";
+import { useAdminOverview, useAdminActivity } from "../../hooks/queries/useAdminQueries";
 
 function StatCard({
   label,
@@ -51,22 +46,10 @@ function actionBadge(action: string): string {
 }
 
 export function AdminDashboardPage() {
-  const [stats, setStats] = useState<OverviewStats | null>(null);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      adminStatsService.getOverview(),
-      adminStatsService.getActivity(15),
-    ])
-      .then(([s, a]) => {
-        setStats(s);
-        setActivity(a);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: stats, isLoading: statsLoading } = useAdminOverview();
+  const { data: activity = [], isLoading: activityLoading } = useAdminActivity(15);
+  
+  const loading = statsLoading || activityLoading;
 
   if (loading) {
     return (

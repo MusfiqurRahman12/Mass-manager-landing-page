@@ -32,9 +32,12 @@ import type {
   ShareType,
   AddHomeRentPayload,
 } from "../services";
-import { expenseApi, memberService, type Member } from "../services";
+import { expenseApi, type Member } from "../services";
 import { formatCurrency } from "../utils/format.utils";
 import { cn } from "../utils";
+import { useHomeRentExpenses, useAddHomeRent, useDeleteHomeRent } from "../hooks/queries/useExpenseQueries";
+import { useMembers } from "../hooks/queries/useMemberQueries";
+
 
 interface HomeRentFormValues {
   total_amount: string;
@@ -51,11 +54,7 @@ export function HomeRentExpensePage() {
   const { user } = useAuth();
   const isManager = user?.role === "manager";
 
-  // State
-  const [members, setMembers] = useState<Member[]>([]);
-  const [rentExpenses, setRentExpenses] = useState<HomeRentExpense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // UI-only state
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<HomeRentExpense | null>(null);
@@ -65,48 +64,31 @@ export function HomeRentExpensePage() {
     member_shares: { member_id: string; member_name: string; amount: number; percentage: number | null }[];
   } | null>(null);
   const [memberShares, setMemberShares] = useState<Record<string, { amount: string; percentage: string }>>({});
-
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch data
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [membersData, rentData] = await Promise.all([
-        memberService.getMembers(),
-        expenseApi.getHomeRentExpenses(),
-      ]);
-      setMembers(membersData.filter(m => m.is_active));
-      setRentExpenses(rentData);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load home rent data");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ── Data Queries ──────────────────────────────────────────────────────────
+  const { data: allMembers = [] as Member[], isLoading: membersLoading } = useMembers();
+  const members = allMembers.filter(m => m.is_active);
+  const { data: rentExpenses = [] as HomeRentExpense[], isLoading: rentLoading } = useHomeRentExpenses();
+  const isLoading = membersLoading || rentLoading;
 
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  const addHomeRent = useAddHomeRent();
+  const deleteHomeRent = useDeleteHomeRent();
+
+  // Initialise member shares when members load
   useEffect(() => {
     if (members.length > 0) {
       const initialShares: Record<string, { amount: string; percentage: string }> = {};
       const equalPercentage = (100 / members.length).toFixed(2);
-      
       members.forEach(member => {
-        initialShares[member.user_id] = {
-          amount: "",
-          percentage: equalPercentage
-        };
+        initialShares[member.user_id] = { amount: "", percentage: equalPercentage };
       });
       setMemberShares(initialShares);
     }
-  }, [members]);
+  }, [members.length]);
 
 
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   // Paginated expenses
   const totalPages = Math.ceil(rentExpenses.length / ITEMS_PER_PAGE);
@@ -115,7 +97,6 @@ export function HomeRentExpensePage() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  // Forms
   const rentForm = useForm<HomeRentFormValues>({
     initialValues: {
       total_amount: "",
@@ -127,54 +108,33 @@ export function HomeRentExpensePage() {
       const errors: Record<string, string> = {};
       if (!values.total_amount) errors.total_amount = "Please enter total amount";
       const amount = parseFloat(values.total_amount);
-      if (isNaN(amount) || amount <= 0) {
-        errors.total_amount = "Amount must be greater than 0";
-      }
+      if (isNaN(amount) || amount <= 0) errors.total_amount = "Amount must be greater than 0";
       if (!values.share_type) errors.share_type = "Please select a share type";
       if (!values.expense_date) errors.expense_date = "Please select a date";
-      if (!values.description.trim()) {
-        errors.description = "Please enter a description";
-      }
+      if (!values.description.trim()) errors.description = "Please enter a description";
       return errors;
     },
     onSubmit: async (values) => {
-      if (!isManager) {
-        toast.error("Only managers can add home rent");
-        return;
+      if (!isManager) { toast.error("Only managers can add home rent"); return; }
+      const payload: AddHomeRentPayload = {
+        total_amount: parseFloat(values.total_amount),
+        share_type: values.share_type as ShareType,
+        description: values.description.trim(),
+        expense_date: values.expense_date,
+      };
+      if (values.share_type === "percentage" || values.share_type === "manual") {
+        payload.member_shares = members.map(m => {
+          const share = memberShares[m.user_id];
+          return {
+            member_id: m.user_id,
+            amount: values.share_type === "manual" ? parseFloat(share.amount || "0") : undefined,
+            percentage: values.share_type === "percentage" ? parseFloat(share.percentage || "0") : undefined,
+          };
+        });
       }
-      setIsSubmitting(true);
-      try {
-        const payload: AddHomeRentPayload = {
-          total_amount: parseFloat(values.total_amount),
-          share_type: values.share_type as ShareType,
-          description: values.description.trim(),
-          expense_date: values.expense_date,
-        };
-
-        // Add member shares for percentage or manual
-        if (values.share_type === "percentage" || values.share_type === "manual") {
-          payload.member_shares = members.map(m => {
-            const share = memberShares[m.user_id];
-            return {
-              member_id: m.user_id,
-              amount: values.share_type === "manual" ? parseFloat(share.amount || "0") : undefined,
-              percentage: values.share_type === "percentage" ? parseFloat(share.percentage || "0") : undefined,
-            };
-          });
-        }
-
-
-        await expenseApi.addHomeRent(payload);
-        toast.success("Home rent added successfully");
-        await fetchData();
-        rentForm.resetForm();
-        setIsPreviewModalOpen(false);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to add home rent");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
+      await addHomeRent.mutateAsync(payload);
+      rentForm.resetForm();
+      setIsPreviewModalOpen(false);
     },
   });
 
@@ -226,35 +186,23 @@ export function HomeRentExpensePage() {
   };
 
   const handleDelete = (expense: HomeRentExpense) => {
-    if (!isManager) {
-      toast.error("Only managers can delete home rent");
-      return;
-    }
+    if (!isManager) { toast.error("Only managers can delete home rent"); return; }
     setExpenseToDelete(expense);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!isManager || !expenseToDelete) return;
-    try {
-      await expenseApi.deleteHomeRent(expenseToDelete.id);
-      toast.success("Home rent deleted successfully");
-      await fetchData();
-      setIsDeleteModalOpen(false);
-      setExpenseToDelete(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete home rent");
-      console.error(error);
-    }
+    await deleteHomeRent.mutateAsync(expenseToDelete.id);
+    setIsDeleteModalOpen(false);
+    setExpenseToDelete(null);
   };
 
   const confirmAndSubmit = () => {
     if (rentForm.values.share_type !== "equal" && previewData) {
-      // For percentage/manual, user needs to confirm the preview first
       setIsPreviewModalOpen(false);
       rentForm.handleSubmit();
     } else {
-      // For equal, submit directly
       rentForm.handleSubmit();
     }
   };
@@ -409,7 +357,7 @@ export function HomeRentExpensePage() {
                   <div className="flex items-end">
                     <Button
                       type="submit"
-                      isLoading={isSubmitting}
+                      isLoading={addHomeRent.isPending}
                       className="w-full"
                       variant="primary"
                     >
@@ -742,7 +690,7 @@ export function HomeRentExpensePage() {
           </Button>
           <Button
             type="submit"
-            isLoading={isSubmitting}
+            isLoading={addHomeRent.isPending}
             onClick={confirmAndSubmit}
           >
             Confirm & Add

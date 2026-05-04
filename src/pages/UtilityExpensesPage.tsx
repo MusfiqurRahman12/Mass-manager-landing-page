@@ -37,9 +37,11 @@ import type {
   AddUtilityPayload,
   ShareType,
 } from "../services";
-import { expenseApi, memberService, type Member } from "../services";
+import { expenseApi } from "../services";
 import { formatCurrency } from "../utils/format.utils";
 import { cn } from "../utils";
+import { useMembers } from "../hooks/queries/useMemberQueries";
+import { useUtilityExpenses, useAddUtilityExpense, useDeleteUtilityExpense } from "../hooks/queries/useExpenseQueries";
 
 interface UtilityFormValues {
   utility_type: string;
@@ -94,10 +96,13 @@ export function UtilityExpensesPage() {
   const isManager = user?.role === "manager";
 
   // State
-  const [members, setMembers] = useState<Member[]>([]);
-  const [utilities, setUtilities] = useState<UtilityExpense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [filterType, setFilterType] = useState<string>("");
+
+  const { data: members = [] } = useMembers();
+  const { data: utilities = [], isLoading } = useUtilityExpenses(filterType as UtilityType);
+  const addUtilityExpense = useAddUtilityExpense();
+  const deleteUtilityExpense = useDeleteUtilityExpense();
+
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<UtilityExpense | null>(null);
@@ -110,29 +115,6 @@ export function UtilityExpensesPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterType, setFilterType] = useState<string>("");
-
-  // Fetch data
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const params: { month_id?: string; utility_type?: UtilityType } = {};
-      if (filterType) {
-        params.utility_type = filterType as UtilityType;
-      }
-      const [membersData, data] = await Promise.all([
-        memberService.getMembers(),
-        expenseApi.getUtilityExpenses(params),
-      ]);
-      setMembers(membersData.filter(m => m.is_active));
-      setUtilities(data);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load utility expenses");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (members.length > 0) {
@@ -148,10 +130,6 @@ export function UtilityExpensesPage() {
       setMemberShares(initialShares);
     }
   }, [members]);
-
-  useEffect(() => {
-    fetchData();
-  }, [filterType]);
 
   // Filtered and paginated expenses
   const filteredUtilities = useMemo(() => {
@@ -207,7 +185,6 @@ export function UtilityExpensesPage() {
         toast.error("Only managers can add utility expenses");
         return;
       }
-      setIsSubmitting(true);
       try {
         const payload: AddUtilityPayload = {
           utility_type: values.utility_type as UtilityType,
@@ -228,16 +205,11 @@ export function UtilityExpensesPage() {
           });
         }
 
-        await expenseApi.addUtilityExpense(payload);
-        toast.success("Utility expense added successfully");
-        await fetchData();
+        await addUtilityExpense.mutateAsync(payload);
         utilityForm.resetForm();
         setIsPreviewModalOpen(false);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to add utility expense");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
+        // Error handled by hook
       }
     },
   });
@@ -309,14 +281,11 @@ export function UtilityExpensesPage() {
   const confirmDelete = async () => {
     if (!isManager || !expenseToDelete) return;
     try {
-      await expenseApi.deleteUtilityExpense(expenseToDelete.id);
-      toast.success("Utility expense deleted successfully");
-      await fetchData();
+      await deleteUtilityExpense.mutateAsync(expenseToDelete.id);
       setIsDeleteModalOpen(false);
       setExpenseToDelete(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete utility expense");
-      console.error(error);
+      // Error handled by hook
     }
   };
 
@@ -485,7 +454,7 @@ export function UtilityExpensesPage() {
                   <div className="flex items-end">
                     <Button
                       type="submit"
-                      isLoading={isSubmitting}
+                      isLoading={addUtilityExpense.isPending}
                       className="w-full"
                       variant="primary"
                     >
@@ -851,7 +820,7 @@ export function UtilityExpensesPage() {
           </Button>
           <Button
             type="submit"
-            isLoading={isSubmitting}
+            isLoading={addUtilityExpense.isPending}
             onClick={confirmAndSubmit}
           >
             Confirm & Add

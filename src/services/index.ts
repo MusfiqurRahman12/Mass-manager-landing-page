@@ -12,3 +12,4 @@ export * from "./monthService";
 export * from "./notificationService";
 export * from "./pdfService";
 export * from "./transferService";
+export * from "./ticketService";

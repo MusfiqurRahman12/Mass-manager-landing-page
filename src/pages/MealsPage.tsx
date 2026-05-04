@@ -10,8 +10,7 @@ import {
   Users,
   Utensils,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -29,8 +28,10 @@ import {
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { useForm } from "../hooks/useForm";
-import type { Meal, MealCost, Member } from "../services";
-import { mealService, memberService } from "../services";
+import { useMeals, useMealCost, useAddMealBatch, useUpdateMeal, useDeleteMeal, useSetMealCost } from "../hooks/queries/useMealQueries";
+import { useMembers } from "../hooks/queries/useMemberQueries";
+import type { Meal } from "../services";
+import type { Member } from "../services/memberService";
 import { cn } from "../utils";
 import { formatCurrency, formatNumber } from "../utils/format.utils";
 
@@ -53,12 +54,7 @@ export function MealsPage() {
   const { user } = useAuth();
   const isManager = user?.role === "manager";
 
-  // State
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [mealCost, setMealCost] = useState<MealCost | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Modal / UI state
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -72,52 +68,25 @@ export function MealsPage() {
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
 
-  // Fetch initial data
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [mealsData, membersData, costData] = await Promise.all([
-        mealService.getMeals(),
-        memberService.getMembers(),
-        mealService.getMealCost(),
-      ]);
-      setMeals(mealsData);
-      setMembers(membersData);
-      setMealCost(costData);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load meal data");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ── Data Queries ──────────────────────────────────────────────────────────
+  const { data: meals = [] as Meal[], isLoading: mealsLoading } = useMeals();
+  const { data: members = [] as Member[], isLoading: membersLoading } = useMembers();
+  const { data: mealCost, isLoading: costLoading } = useMealCost();
+  const isLoading = mealsLoading || membersLoading || costLoading;
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // ── Mutations ─────────────────────────────────────────────────────────────
+  const addMealBatch = useAddMealBatch();
+  const updateMeal = useUpdateMeal();
+  const deleteMeal = useDeleteMeal();
+  const setMealCost = useSetMealCost();
 
   // Filtered and paginated meals
   const filteredMeals = useMemo(() => {
     let filtered = [...meals];
-
-    if (filterMember) {
-      filtered = filtered.filter((m) => m.member_id === filterMember);
-    }
-
-    if (filterStartDate) {
-      filtered = filtered.filter((m) => m.meal_date >= filterStartDate);
-    }
-
-    if (filterEndDate) {
-      filtered = filtered.filter((m) => m.meal_date <= filterEndDate);
-    }
-
-    // Sort by date descending
-    filtered.sort(
-      (a, b) =>
-        new Date(b.meal_date).getTime() - new Date(a.meal_date).getTime(),
-    );
-
+    if (filterMember) filtered = filtered.filter((m) => m.member_id === filterMember);
+    if (filterStartDate) filtered = filtered.filter((m) => m.meal_date >= filterStartDate);
+    if (filterEndDate) filtered = filtered.filter((m) => m.meal_date <= filterEndDate);
+    filtered.sort((a, b) => new Date(b.meal_date).getTime() - new Date(a.meal_date).getTime());
     return filtered;
   }, [meals, filterMember, filterStartDate, filterEndDate]);
 
@@ -127,23 +96,30 @@ export function MealsPage() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  // Member options for select
+  // Member lookup helpers
   const memberOptions = useMemo(
-    () =>
-      members.map((m) => ({
-        value: m.user_id,
-        label: m.full_name,
-      })),
+    () => members.map((m) => ({ value: m.user_id, label: m.full_name })),
     [members],
   );
 
   const memberMap = useMemo(() => {
-    const map = new Map<string, Member>();
+    const map = new Map<string, typeof members[0]>();
     members.forEach((m) => map.set(m.user_id, m));
     return map;
   }, [members]);
 
-  // Forms
+  // Summary calculations
+  const todayMeals = useMemo(() => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    return meals.filter((m) => m.meal_date === today).length;
+  }, [meals]);
+
+  const myTotalMeals = useMemo(() => {
+    if (!user) return 0;
+    return meals.filter((m) => m.member_id === user.id).reduce((sum, m) => sum + m.meal_count, 0);
+  }, [meals, user]);
+
+  // ── Forms ─────────────────────────────────────────────────────────────────
   const mealForm = useForm<MealFormValues>({
     initialValues: {
       member_id: "",
@@ -155,50 +131,29 @@ export function MealsPage() {
       const errors: Record<string, string> = {};
       if (!isBulkMode && !values.member_id) errors.member_id = "Please select a member";
       if (!values.meal_date) errors.meal_date = "Please select a date";
-      if (values.end_date && values.end_date < values.meal_date) {
+      if (values.end_date && values.end_date < values.meal_date)
         errors.end_date = "End date must be after start date";
-      }
       if (!values.meal_count) errors.meal_count = "Please enter meal count";
       const count = parseFloat(values.meal_count);
-      if (isNaN(count) || count < 0 || count > 10) {
+      if (isNaN(count) || count < 0 || count > 10)
         errors.meal_count = "Meal count must be between 0 and 10";
-      }
       return errors;
     },
     onSubmit: async (values) => {
-      if (!isManager) {
-        toast.error("Only managers can add meals");
-        return;
-      }
-      setIsSubmitting(true);
-      try {
-        await mealService.addMealBatch({
-          member_id: isBulkMode ? undefined : values.member_id,
-          meal_date: values.meal_date,
-          end_date: values.end_date || undefined,
-          meal_count: parseFloat(values.meal_count),
-        });
-
-        toast.success(
-          isBulkMode
-            ? "Meals added successfully for all members"
-            : "Meal added successfully"
-        );
-
-        await fetchData();
-        mealForm.resetForm();
-        mealForm.setValues({
-          member_id: isBulkMode ? "" : values.member_id,
-          meal_date: values.meal_date,
-          end_date: "",
-          meal_count: values.meal_count,
-        });
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to add meal");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
+      if (!isManager) return;
+      await addMealBatch.mutateAsync({
+        member_id: isBulkMode ? undefined : values.member_id,
+        meal_date: values.meal_date,
+        end_date: values.end_date || undefined,
+        meal_count: parseFloat(values.meal_count),
+      });
+      mealForm.resetForm();
+      mealForm.setValues({
+        member_id: isBulkMode ? "" : values.member_id,
+        meal_date: values.meal_date,
+        end_date: "",
+        meal_count: values.meal_count,
+      });
     },
   });
 
@@ -208,28 +163,18 @@ export function MealsPage() {
       const errors: Record<string, string> = {};
       if (!values.meal_count) errors.meal_count = "Please enter meal count";
       const count = parseFloat(values.meal_count);
-      if (isNaN(count) || count < 0 || count > 10) {
+      if (isNaN(count) || count < 0 || count > 10)
         errors.meal_count = "Meal count must be between 0 and 10";
-      }
       return errors;
     },
     onSubmit: async (values) => {
       if (!isManager || !selectedMeal) return;
-      setIsSubmitting(true);
-      try {
-        await mealService.updateMeal(selectedMeal.id, {
-          meal_count: parseFloat(values.meal_count),
-        });
-        toast.success("Meal updated successfully");
-        await fetchData();
-        setIsEditModalOpen(false);
-        setSelectedMeal(null);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to update meal");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
+      await updateMeal.mutateAsync({
+        id: selectedMeal.id,
+        payload: { meal_count: parseFloat(values.meal_count) },
+      });
+      setIsEditModalOpen(false);
+      setSelectedMeal(null);
     },
   });
 
@@ -239,87 +184,39 @@ export function MealsPage() {
       const errors: Record<string, string> = {};
       if (!values.total_cost) errors.total_cost = "Please enter total cost";
       const cost = parseFloat(values.total_cost);
-      if (isNaN(cost) || cost < 0) {
-        errors.total_cost = "Cost must be a positive number";
-      }
+      if (isNaN(cost) || cost < 0) errors.total_cost = "Cost must be a positive number";
       return errors;
     },
     onSubmit: async (values) => {
       if (!isManager) return;
-      setIsSubmitting(true);
-      try {
-        await mealService.setMealCost({
-          total_cost: parseFloat(values.total_cost),
-        });
-        toast.success("Meal cost updated successfully");
-        await fetchData();
-        setIsCostModalOpen(false);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to update meal cost");
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
+      await setMealCost.mutateAsync({ total_cost: parseFloat(values.total_cost) });
+      setIsCostModalOpen(false);
     },
   });
 
-  // Handlers
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleEdit = (meal: Meal) => {
-    if (!isManager) {
-      toast.error("Only managers can edit meals");
-      return;
-    }
     setSelectedMeal(meal);
     editForm.setValues({ meal_count: meal.meal_count.toString() });
     setIsEditModalOpen(true);
   };
 
   const handleDelete = (meal: Meal) => {
-    if (!isManager) {
-      toast.error("Only managers can delete meals");
-      return;
-    }
     setMealToDelete(meal);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!isManager || !mealToDelete) return;
-    try {
-      await mealService.deleteMeal(mealToDelete.id);
-      toast.success("Meal deleted successfully");
-      await fetchData();
-      setIsDeleteModalOpen(false);
-      setMealToDelete(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete meal");
-      console.error(error);
-    }
+    if (!mealToDelete) return;
+    await deleteMeal.mutateAsync(mealToDelete.id);
+    setIsDeleteModalOpen(false);
+    setMealToDelete(null);
   };
 
   const openCostModal = () => {
-    if (!isManager) {
-      toast.error("Only managers can update meal cost");
-      return;
-    }
-    costForm.setValues({
-      total_cost: mealCost?.total_cost.toString() || "",
-    });
+    costForm.setValues({ total_cost: mealCost?.total_cost.toString() || "" });
     setIsCostModalOpen(true);
   };
-
-  // Summary calculations
-  const todayMeals = useMemo(() => {
-    const today = format(new Date(), "yyyy-MM-dd");
-    return meals.filter((m) => m.meal_date === today).length;
-  }, [meals]);
-
-  const myTotalMeals = useMemo(() => {
-    if (!user) return 0;
-    return meals
-      .filter((m) => m.member_id === user.id)
-      .reduce((sum, m) => sum + m.meal_count, 0);
-  }, [meals, user]);
 
   return (
     <MainLayout>
@@ -327,12 +224,8 @@ export function MealsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-              Meal Management
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Track daily meals and manage meal rates
-            </p>
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Meal Management</h1>
+            <p className="text-neutral-600 dark:text-neutral-400">Track daily meals and manage meal rates</p>
           </div>
           {isManager && (
             <Button variant="primary" onClick={openCostModal}>
@@ -351,9 +244,7 @@ export function MealsPage() {
                   <Utensils className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    My Total Meals
-                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">My Total Meals</p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? <Skeleton className="h-8 w-16" /> : formatNumber(myTotalMeals)}
                   </div>
@@ -369,15 +260,9 @@ export function MealsPage() {
                   <Utensils className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Meals
-                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Meals</p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-16" />
-                    ) : (
-                      formatNumber(mealCost?.total_meal || 0)
-                    )}
+                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatNumber(mealCost?.total_meal || 0)}
                   </div>
                 </div>
               </div>
@@ -391,15 +276,9 @@ export function MealsPage() {
                   <TrendingUp className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Meal Rate
-                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Meal Rate</p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-16" />
-                    ) : (
-                      formatCurrency(mealCost?.meal_rate || 0)
-                    )}
+                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(mealCost?.meal_rate || 0)}
                   </div>
                 </div>
               </div>
@@ -413,15 +292,9 @@ export function MealsPage() {
                   <DollarSign className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Cost
-                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Cost</p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-16" />
-                    ) : (
-                      formatCurrency(mealCost?.total_cost || 0)
-                    )}
+                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(mealCost?.total_cost || 0)}
                   </div>
                 </div>
               </div>
@@ -435,9 +308,7 @@ export function MealsPage() {
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Today's Meals
-                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Today's Meals</p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? <Skeleton className="h-8 w-16" /> : todayMeals}
                   </div>
@@ -452,21 +323,15 @@ export function MealsPage() {
           <Card>
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                  Add Meal Entry
-                </h2>
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">Add Meal Entry</h2>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Bulk Entry
-                  </span>
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">Bulk Entry</span>
                   <button
                     type="button"
                     onClick={() => setIsBulkMode(!isBulkMode)}
                     className={cn(
                       "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                      isBulkMode
-                        ? "bg-primary"
-                        : "bg-neutral-200 dark:bg-neutral-700",
+                      isBulkMode ? "bg-primary" : "bg-neutral-200 dark:bg-neutral-700",
                     )}
                   >
                     <span
@@ -487,56 +352,27 @@ export function MealsPage() {
                       label="Member"
                       placeholder="Select member"
                       value={mealForm.values.member_id}
-                      onChange={(value) =>
-                        mealForm.setValues({
-                          ...mealForm.values,
-                          member_id: value,
-                        })
-                      }
-                      error={
-                        mealForm.touched.member_id
-                          ? mealForm.errors.member_id
-                          : undefined
-                      }
+                      onChange={(value) => mealForm.setValues({ ...mealForm.values, member_id: value })}
+                      error={mealForm.touched.member_id ? mealForm.errors.member_id : undefined}
                       options={memberOptions}
                     />
                   )}
                   {isBulkMode && (
                     <div className="flex items-center">
-                      <Badge variant="primary">
-                        All Members ({members.length})
-                      </Badge>
+                      <Badge variant="primary">All Members ({members.length})</Badge>
                     </div>
                   )}
                   <DatePicker
                     label="Date"
                     value={mealForm.values.meal_date}
-                    onChange={(date) =>
-                      mealForm.setValues({
-                        ...mealForm.values,
-                        meal_date: date,
-                      })
-                    }
-                    error={
-                      mealForm.touched.meal_date
-                        ? mealForm.errors.meal_date
-                        : undefined
-                    }
+                    onChange={(date) => mealForm.setValues({ ...mealForm.values, meal_date: date })}
+                    error={mealForm.touched.meal_date ? mealForm.errors.meal_date : undefined}
                   />
                   <DatePicker
                     label="End Date (Optional)"
                     value={mealForm.values.end_date}
-                    onChange={(date) =>
-                      mealForm.setValues({
-                        ...mealForm.values,
-                        end_date: date,
-                      })
-                    }
-                    error={
-                      mealForm.touched.end_date
-                        ? mealForm.errors.end_date
-                        : undefined
-                    }
+                    onChange={(date) => mealForm.setValues({ ...mealForm.values, end_date: date })}
+                    error={mealForm.touched.end_date ? mealForm.errors.end_date : undefined}
                   />
                   <Input
                     type="number"
@@ -549,18 +385,10 @@ export function MealsPage() {
                     value={mealForm.values.meal_count}
                     onChange={mealForm.handleChange}
                     onBlur={mealForm.handleBlur}
-                    error={
-                      mealForm.touched.meal_count
-                        ? mealForm.errors.meal_count
-                        : undefined
-                    }
+                    error={mealForm.touched.meal_count ? mealForm.errors.meal_count : undefined}
                   />
                   <div className="flex items-end">
-                    <Button
-                      type="submit"
-                      isLoading={isSubmitting}
-                      className="w-full"
-                    >
+                    <Button type="submit" isLoading={addMealBatch.isPending} className="w-full">
                       <Plus className="h-4 w-4 mr-2" />
                       {isBulkMode ? "Add for All" : "Add Meal"}
                     </Button>
@@ -575,9 +403,7 @@ export function MealsPage() {
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Meal Records
-              </h2>
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">Meal Records</h2>
               {/* Filters */}
               <div className="flex flex-wrap gap-2">
                 {isManager && (
@@ -585,35 +411,17 @@ export function MealsPage() {
                     placeholder="Filter by member"
                     value={filterMember}
                     onChange={setFilterMember}
-                    options={[
-                      { value: "", label: "All Members" },
-                      ...memberOptions,
-                    ]}
+                    options={[{ value: "", label: "All Members" }, ...memberOptions]}
                     className="w-40"
                   />
                 )}
-                <DatePicker
-                  placeholder="Start date"
-                  value={filterStartDate}
-                  onChange={setFilterStartDate}
-                  className="w-40"
-                />
-                <DatePicker
-                  placeholder="End date"
-                  value={filterEndDate}
-                  onChange={setFilterEndDate}
-                  className="w-40"
-                />
+                <DatePicker placeholder="Start date" value={filterStartDate} onChange={setFilterStartDate} className="w-40" />
+                <DatePicker placeholder="End date" value={filterEndDate} onChange={setFilterEndDate} className="w-40" />
                 {(filterMember || filterStartDate || filterEndDate) && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      setFilterMember("");
-                      setFilterStartDate("");
-                      setFilterEndDate("");
-                      setCurrentPage(1);
-                    }}
+                    onClick={() => { setFilterMember(""); setFilterStartDate(""); setFilterEndDate(""); setCurrentPage(1); }}
                   >
                     Clear
                   </Button>
@@ -624,21 +432,13 @@ export function MealsPage() {
           <CardBody>
             {isLoading ? (
               <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
               </div>
             ) : paginatedMeals.length === 0 ? (
               <div className="text-center py-12">
                 <Utensils className="h-12 w-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-4" />
-                <p className="text-neutral-500 dark:text-neutral-400">
-                  No meals found
-                </p>
-                {isManager && (
-                  <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-1">
-                    Add your first meal entry above
-                  </p>
-                )}
+                <p className="text-neutral-500 dark:text-neutral-400">No meals found</p>
+                {isManager && <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-1">Add your first meal entry above</p>}
               </div>
             ) : (
               <>
@@ -646,64 +446,34 @@ export function MealsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-neutral-200 dark:border-neutral-700">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                          Date
-                        </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                          Member
-                        </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                          Meals
-                        </th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                          Cost
-                        </th>
-                        {isManager && (
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                            Actions
-                          </th>
-                        )}
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Date</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Member</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Meals</th>
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Cost</th>
+                        {isManager && <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedMeals.map((meal) => {
                         const member = memberMap.get(meal.member_id);
-                        const cost =
-                          meal.meal_count * (mealCost?.meal_rate || 0);
+                        const cost = meal.meal_count * (mealCost?.meal_rate || 0);
                         return (
-                          <tr
-                            key={meal.id}
-                            className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                          >
+                          <tr key={meal.id} className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                             <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white">
                               {format(parseISO(meal.meal_date), "MMM dd, yyyy")}
                             </td>
-                            <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white">
-                              {member?.full_name || "Unknown"}
-                            </td>
+                            <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white">{member?.full_name || "Unknown"}</td>
                             <td className="py-3 px-4">
-                              <Badge variant="secondary">
-                                {meal.meal_count} meals
-                              </Badge>
+                              <Badge variant="secondary">{meal.meal_count} meals</Badge>
                             </td>
-                            <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white text-right">
-                              {formatCurrency(cost)}
-                            </td>
+                            <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white text-right">{formatCurrency(cost)}</td>
                             {isManager && (
                               <td className="py-3 px-4 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEdit(meal)}
-                                  >
+                                  <Button variant="ghost" size="sm" onClick={() => handleEdit(meal)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDelete(meal)}
-                                  >
+                                  <Button variant="ghost" size="sm" onClick={() => handleDelete(meal)}>
                                     <Trash2 className="h-4 w-4 text-error" />
                                   </Button>
                                 </div>
@@ -721,34 +491,14 @@ export function MealsPage() {
                   <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                      {Math.min(
-                        currentPage * ITEMS_PER_PAGE,
-                        filteredMeals.length,
-                      )}{" "}
-                      of {filteredMeals.length} meals
+                      {Math.min(currentPage * ITEMS_PER_PAGE, filteredMeals.length)} of {filteredMeals.length} meals
                     </p>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(1, p - 1))
-                        }
-                        disabled={currentPage === 1}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages, p + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                      >
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Page {currentPage} of {totalPages}</span>
+                      <Button variant="ghost" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
@@ -761,14 +511,7 @@ export function MealsPage() {
       </div>
 
       {/* Edit Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedMeal(null);
-        }}
-        title="Edit Meal Entry"
-      >
+      <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setSelectedMeal(null); }} title="Edit Meal Entry">
         <ModalBody>
           <form id="edit-form" onSubmit={editForm.handleSubmit}>
             <Input
@@ -781,53 +524,26 @@ export function MealsPage() {
               value={editForm.values.meal_count}
               onChange={editForm.handleChange}
               onBlur={editForm.handleBlur}
-              error={
-                editForm.touched.meal_count
-                  ? editForm.errors.meal_count
-                  : undefined
-              }
+              error={editForm.touched.meal_count ? editForm.errors.meal_count : undefined}
             />
           </form>
         </ModalBody>
         <ModalFooter>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setIsEditModalOpen(false);
-              setSelectedMeal(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" form="edit-form" isLoading={isSubmitting}>
-            Update
-          </Button>
+          <Button variant="ghost" onClick={() => { setIsEditModalOpen(false); setSelectedMeal(null); }}>Cancel</Button>
+          <Button type="submit" form="edit-form" isLoading={updateMeal.isPending}>Update</Button>
         </ModalFooter>
       </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setMealToDelete(null);
-        }}
+        onClose={() => { setIsDeleteModalOpen(false); setMealToDelete(null); }}
         title="Delete Meal Entry"
         description="Are you sure you want to delete this meal entry? This action cannot be undone."
       >
         <ModalFooter>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setIsDeleteModalOpen(false);
-              setMealToDelete(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Delete
-          </Button>
+          <Button variant="ghost" onClick={() => { setIsDeleteModalOpen(false); setMealToDelete(null); }}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMeal.isPending}>Delete</Button>
         </ModalFooter>
       </Modal>
 
@@ -850,30 +566,19 @@ export function MealsPage() {
               onChange={costForm.handleChange}
               onBlur={costForm.handleBlur}
               name="total_cost"
-              error={
-                costForm.touched.total_cost
-                  ? costForm.errors.total_cost
-                  : undefined
-              }
+              error={costForm.touched.total_cost ? costForm.errors.total_cost : undefined}
             />
             {mealCost && mealCost.total_meal > 0 && (
               <p className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
                 Estimated meal rate:{" "}
-                {formatCurrency(
-                  parseFloat(costForm.values.total_cost || "0") /
-                    mealCost.total_meal,
-                )}
+                {formatCurrency(parseFloat(costForm.values.total_cost || "0") / mealCost.total_meal)}
               </p>
             )}
           </form>
         </ModalBody>
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setIsCostModalOpen(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" form="cost-form" isLoading={isSubmitting}>
-            Update Cost
-          </Button>
+          <Button variant="ghost" onClick={() => setIsCostModalOpen(false)}>Cancel</Button>
+          <Button type="submit" form="cost-form" isLoading={setMealCost.isPending}>Update Cost</Button>
         </ModalFooter>
       </Modal>
     </MainLayout>
