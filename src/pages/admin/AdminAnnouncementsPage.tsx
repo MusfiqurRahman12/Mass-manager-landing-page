@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Bell, Loader2, Send, Megaphone } from "lucide-react";
+import { Bell, Send, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "../../components/admin-layout";
 import { adminAnnouncementService } from "../../services/adminService";
