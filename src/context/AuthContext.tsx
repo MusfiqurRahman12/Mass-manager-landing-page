@@ -8,6 +8,7 @@ import {
 import { authService, type User } from "../services";
 import { messService } from "../services/messService";
 import { setGlobalCurrency } from "../utils/format.utils";
+import { requestAndRegisterPushToken, unregisterPushToken } from "../lib/pushNotifications";
 
 interface AuthContextType {
   user: User | null;
@@ -93,11 +94,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Failed to fetch mess for currency:", err);
         }
       }
+
+      // Request push permission after successful login (non-blocking)
+      _tryRequestPush();
       
       return !!userInfo.mess_id;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // After login succeeds, request push permission in the background
+  const _tryRequestPush = () => {
+    requestAndRegisterPushToken().catch(() => {/* best effort */});
   };
 
   const register = async (
@@ -150,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    unregisterPushToken(); // best-effort token cleanup
     authService.logout();
     setUser(null);
   };
