@@ -1,4 +1,5 @@
 import { format, parseISO } from "date-fns";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,6 +10,8 @@ import {
   TrendingUp,
   Users,
   Utensils,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -56,6 +59,7 @@ export function MealsPage() {
 
   // Modal / UI state
   const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedBulkMembers, setSelectedBulkMembers] = useState<string[]>([]);
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -111,7 +115,9 @@ export function MealsPage() {
   // Summary calculations
   const todayMeals = useMemo(() => {
     const today = format(new Date(), "yyyy-MM-dd");
-    return meals.filter((m) => m.meal_date === today).length;
+    return meals
+      .filter((m) => m.meal_date === today)
+      .reduce((sum, m) => sum + m.meal_count, 0);
   }, [meals]);
 
   const myTotalMeals = useMemo(() => {
@@ -130,6 +136,7 @@ export function MealsPage() {
     validate: (values) => {
       const errors: Record<string, string> = {};
       if (!isBulkMode && !values.member_id) errors.member_id = "Please select a member";
+      if (isBulkMode && selectedBulkMembers.length === 0) errors.member_id = "Please select at least one member";
       if (!values.meal_date) errors.meal_date = "Please select a date";
       if (values.end_date && values.end_date < values.meal_date)
         errors.end_date = "End date must be after start date";
@@ -143,6 +150,7 @@ export function MealsPage() {
       if (!isManager) return;
       await addMealBatch.mutateAsync({
         member_id: isBulkMode ? undefined : values.member_id,
+        member_ids: isBulkMode ? selectedBulkMembers : undefined,
         meal_date: values.meal_date,
         end_date: values.end_date || undefined,
         meal_count: parseFloat(values.meal_count),
@@ -328,7 +336,13 @@ export function MealsPage() {
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Bulk Entry</span>
                   <button
                     type="button"
-                    onClick={() => setIsBulkMode(!isBulkMode)}
+                    onClick={() => {
+                      const newBulkMode = !isBulkMode;
+                      setIsBulkMode(newBulkMode);
+                      if (newBulkMode && selectedBulkMembers.length === 0) {
+                        setSelectedBulkMembers(members.map((m) => m.user_id));
+                      }
+                    }}
                     className={cn(
                       "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
                       isBulkMode ? "bg-primary" : "bg-neutral-200 dark:bg-neutral-700",
@@ -358,8 +372,94 @@ export function MealsPage() {
                     />
                   )}
                   {isBulkMode && (
-                    <div className="flex items-center">
-                      <Badge variant="primary">All Members ({members.length})</Badge>
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2.5">
+                        Members
+                      </label>
+                      <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "w-full px-4 py-2.5 rounded-lg border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-left flex items-center justify-between",
+                              mealForm.touched.member_id && mealForm.errors.member_id && "border-error"
+                            )}
+                          >
+                            <span className="truncate">
+                              {selectedBulkMembers.length === members.length
+                                ? `All Members (${members.length})`
+                                : `${selectedBulkMembers.length} Selected`}
+                            </span>
+                            <ChevronDown className="h-4 w-4 text-neutral-400" />
+                          </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                          <DropdownMenu.Content
+                            className="min-w-[200px] w-[var(--radix-dropdown-menu-trigger-width)] max-h-60 overflow-y-auto bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50"
+                            align="start"
+                          >
+                            <DropdownMenu.Item
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                if (selectedBulkMembers.length === members.length) {
+                                  setSelectedBulkMembers([]);
+                                } else {
+                                  setSelectedBulkMembers(members.map((m) => m.user_id));
+                                }
+                              }}
+                              className="px-4 py-2 text-sm cursor-pointer flex items-center justify-between hover:bg-neutral-100 dark:hover:bg-neutral-700 outline-none text-neutral-900 dark:text-white font-semibold border-b border-neutral-100 dark:border-neutral-700"
+                            >
+                              <span>Select All</span>
+                              <div
+                                className={cn(
+                                  "w-4 h-4 rounded border flex items-center justify-center",
+                                  selectedBulkMembers.length === members.length
+                                    ? "bg-primary border-primary"
+                                    : "border-neutral-300 dark:border-neutral-600"
+                                )}
+                              >
+                                {selectedBulkMembers.length === members.length && (
+                                  <Check className="h-3 w-3 text-white" />
+                                )}
+                              </div>
+                            </DropdownMenu.Item>
+                            {members.map((member) => {
+                              const isSelected = selectedBulkMembers.includes(member.user_id);
+                              return (
+                                <DropdownMenu.Item
+                                  key={member.user_id}
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    if (isSelected) {
+                                      setSelectedBulkMembers((prev) =>
+                                        prev.filter((id) => id !== member.user_id)
+                                      );
+                                    } else {
+                                      setSelectedBulkMembers((prev) => [...prev, member.user_id]);
+                                    }
+                                  }}
+                                  className="px-4 py-2 text-sm cursor-pointer flex items-center justify-between hover:bg-neutral-100 dark:hover:bg-neutral-700 outline-none text-neutral-900 dark:text-white"
+                                >
+                                  <span>{member.full_name}</span>
+                                  <div
+                                    className={cn(
+                                      "w-4 h-4 rounded border flex items-center justify-center",
+                                      isSelected
+                                        ? "bg-primary border-primary"
+                                        : "border-neutral-300 dark:border-neutral-600"
+                                    )}
+                                  >
+                                    {isSelected && <Check className="h-3 w-3 text-white" />}
+                                  </div>
+                                </DropdownMenu.Item>
+                              );
+                            })}
+                          </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                      </DropdownMenu.Root>
+                      {mealForm.touched.member_id && mealForm.errors.member_id && (
+                        <p className="mt-1.5 text-sm font-medium text-error">{mealForm.errors.member_id}</p>
+                      )}
                     </div>
                   )}
                   <DatePicker

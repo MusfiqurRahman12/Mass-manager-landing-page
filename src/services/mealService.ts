@@ -17,6 +17,7 @@ export interface AddMealPayload {
 
 export interface AddMealBatchPayload {
   member_id?: string;
+  member_ids?: string[];
   meal_date: string;
   end_date?: string;
   meal_count: number;

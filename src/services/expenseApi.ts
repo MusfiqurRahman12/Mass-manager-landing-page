@@ -89,6 +89,8 @@ export interface AddHomeRentPayload {
   member_shares?: MemberShareInput[];
 }
 
+export type UpdateHomeRentPayload = Partial<AddHomeRentPayload>;
+
 // ==================== Utility Expenses Types ====================
 export type UtilityType = "electricity" | "gas" | "water" | "internet" | "other";
 
@@ -114,6 +116,8 @@ export interface AddUtilityPayload {
   expense_date: string;
   member_shares?: MemberShareInput[];
 }
+
+export type UpdateUtilityPayload = Partial<AddUtilityPayload>;
 
 // ==================== Summary Types ====================
 export interface MemberSummary {
@@ -201,6 +205,14 @@ export const expenseApi = {
     return data;
   },
 
+  updateHomeRent: async (
+    expenseId: string,
+    payload: UpdateHomeRentPayload,
+  ): Promise<HomeRentExpense> => {
+    const { data } = await apiClient.put<HomeRentExpense>(`/expenses/home-rent/${expenseId}`, payload);
+    return data;
+  },
+
   deleteHomeRent: async (expenseId: string): Promise<void> => {
     await apiClient.delete(`/expenses/home-rent/${expenseId}`);
   },
@@ -224,6 +236,14 @@ export const expenseApi = {
 
   addUtilityExpense: async (payload: AddUtilityPayload): Promise<UtilityExpense> => {
     const { data } = await apiClient.post<UtilityExpense>("/expenses/utilities", payload);
+    return data;
+  },
+
+  updateUtilityExpense: async (
+    expenseId: string,
+    payload: UpdateUtilityPayload,
+  ): Promise<UtilityExpense> => {
+    const { data } = await apiClient.put<UtilityExpense>(`/expenses/utilities/${expenseId}`, payload);
     return data;
   },
 
