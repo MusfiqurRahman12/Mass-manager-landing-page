@@ -41,7 +41,8 @@ import { expenseApi } from "../services";
 import { formatCurrency } from "../utils/format.utils";
 import { cn } from "../utils";
 import { useMembers } from "../hooks/queries/useMemberQueries";
-import { useUtilityExpenses, useAddUtilityExpense, useDeleteUtilityExpense } from "../hooks/queries/useExpenseQueries";
+import { useUtilityExpenses, useAddUtilityExpense, useDeleteUtilityExpense, useUpdateUtilityExpense } from "../hooks/queries/useExpenseQueries";
+import { useMonthHistory } from "../hooks/queries/useMonthQueries";
 
 interface UtilityFormValues {
   utility_type: string;
@@ -101,11 +102,21 @@ export function UtilityExpensesPage() {
   const { data: members = [] } = useMembers();
   const { data: utilities = [], isLoading } = useUtilityExpenses(filterType as UtilityType);
   const addUtilityExpense = useAddUtilityExpense();
+  const updateUtilityExpense = useUpdateUtilityExpense();
   const deleteUtilityExpense = useDeleteUtilityExpense();
+
+  // For Import from Previous Month
+  const { data: monthHistory = [] } = useMonthHistory(5, 0);
+  const pastMonths = monthHistory.filter(m => !m.is_active);
+  const previousMonthId = pastMonths.length > 0 ? pastMonths[0].id : undefined;
+  const { data: previousMonthExpenses = [], isLoading: previousMonthLoading } = useUtilityExpenses(previousMonthId);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<UtilityExpense | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<UtilityExpense | null>(null);
   const [previewData, setPreviewData] = useState<{
     total_amount: number;
     share_type: ShareType;
@@ -213,6 +224,101 @@ export function UtilityExpensesPage() {
       }
     },
   });
+
+  // Edit form setup
+  const editForm = useForm<UtilityFormValues>({
+    initialValues: {
+      utility_type: "electricity",
+      total_amount: "",
+      share_type: "equal",
+      expense_date: format(new Date(), "yyyy-MM-dd"),
+      description: "",
+    },
+    validate: (values) => {
+      const errors: Record<string, string> = {};
+      if (!values.utility_type) errors.utility_type = "Please select a utility type";
+      if (!values.total_amount) errors.total_amount = "Please enter an amount";
+      const amount = parseFloat(values.total_amount);
+      if (isNaN(amount) || amount <= 0) errors.total_amount = "Amount must be greater than 0";
+      if (!values.share_type) errors.share_type = "Please select a share type";
+      if (!values.expense_date) errors.expense_date = "Please select a date";
+      if (!values.description.trim()) errors.description = "Please enter a description";
+      return errors;
+    },
+    onSubmit: async (values) => {
+      if (!isManager || !selectedExpense) return;
+      const payload: Partial<AddUtilityPayload> = {
+        utility_type: values.utility_type as UtilityType,
+        total_amount: parseFloat(values.total_amount),
+        share_type: values.share_type as ShareType,
+        description: values.description.trim(),
+        expense_date: values.expense_date,
+      };
+      if (values.share_type === "percentage" || values.share_type === "manual") {
+        payload.member_shares = members.map(m => {
+          const share = memberShares[m.user_id];
+          return {
+            member_id: m.user_id,
+            amount: values.share_type === "manual" ? parseFloat(share.amount || "0") : undefined,
+            percentage: values.share_type === "percentage" ? parseFloat(share.percentage || "0") : undefined,
+          };
+        });
+      }
+      await updateUtilityExpense.mutateAsync({ id: selectedExpense.id, payload });
+      setIsEditModalOpen(false);
+      setSelectedExpense(null);
+    },
+  });
+
+  const handleEdit = (expense: UtilityExpense) => {
+    setSelectedExpense(expense);
+    editForm.setValues({
+      utility_type: expense.utility_type,
+      total_amount: expense.total_amount.toString(),
+      share_type: expense.share_type,
+      expense_date: expense.expense_date,
+      description: expense.description,
+    });
+    
+    // Set member shares
+    const newShares: Record<string, { amount: string; percentage: string }> = {};
+    const equalPercentage = (100 / members.length).toFixed(2);
+    
+    members.forEach(member => {
+      const memberShare = expense.member_shares.find(s => s.member_id === member.user_id);
+      newShares[member.user_id] = {
+        amount: memberShare ? memberShare.amount.toString() : "",
+        percentage: memberShare && memberShare.percentage ? memberShare.percentage.toString() : equalPercentage,
+      };
+    });
+    setMemberShares(newShares);
+    setIsEditModalOpen(true);
+  };
+
+  const handleImportExpense = (expense: UtilityExpense) => {
+    utilityForm.setValues({
+      utility_type: expense.utility_type,
+      total_amount: expense.total_amount.toString(),
+      share_type: expense.share_type,
+      expense_date: format(new Date(), "yyyy-MM-dd"), // Use today's date for imported
+      description: expense.description + " (Imported)",
+    });
+
+    // Populate shares based on the imported expense
+    const newShares: Record<string, { amount: string; percentage: string }> = {};
+    const equalPercentage = (100 / members.length).toFixed(2);
+    
+    members.forEach(member => {
+      const memberShare = expense.member_shares.find(s => s.member_id === member.user_id);
+      newShares[member.user_id] = {
+        amount: memberShare ? memberShare.amount.toString() : "",
+        percentage: memberShare && memberShare.percentage ? memberShare.percentage.toString() : equalPercentage,
+      };
+    });
+    setMemberShares(newShares);
+    setIsImportModalOpen(false);
+    toast.success("Form populated with selected expense. Please review and add.");
+  };
 
   // Preview handler
   const handlePreview = async () => {
@@ -365,9 +471,19 @@ export function UtilityExpensesPage() {
         {isManager && (
           <Card>
             <CardHeader className="pb-4">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Add Utility Expense
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Add Utility Expense
+                </h2>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsImportModalOpen(true)}
+                  disabled={pastMonths.length === 0}
+                >
+                  Import from Previous Month
+                </Button>
+              </div>
             </CardHeader>
             <CardBody>
               <form onSubmit={(e) => { e.preventDefault(); handlePreview(); }}>
@@ -690,13 +806,22 @@ export function UtilityExpensesPage() {
                             </td>
                             {isManager && (
                               <td className="py-3 px-4 text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(expense)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-error" />
-                                </Button>
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(expense)}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDelete(expense)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-error" />
+                                  </Button>
+                                </div>
                               </td>
                             )}
                           </tr>
@@ -851,6 +976,166 @@ export function UtilityExpensesPage() {
           <Button variant="danger" onClick={confirmDelete}>
             Delete
           </Button>
+        </ModalFooter>
+      </Modal>
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setSelectedExpense(null); }}
+        title="Edit Utility Expense"
+      >
+        <ModalBody>
+          <form id="edit-utility-form" onSubmit={editForm.handleSubmit} className="space-y-4">
+            <Select
+              label="Utility Type"
+              placeholder="Select type"
+              value={editForm.values.utility_type}
+              onChange={(value) => editForm.setValues({ ...editForm.values, utility_type: value })}
+              options={[
+                { value: "electricity", label: "Electricity" },
+                { value: "gas", label: "Gas" },
+                { value: "water", label: "Water" },
+                { value: "internet", label: "Internet" },
+                { value: "other", label: "Other" },
+              ]}
+              error={editForm.touched.utility_type ? editForm.errors.utility_type : undefined}
+            />
+            <Input
+              label="Total Amount"
+              type="number"
+              step="0.01"
+              min="0"
+              name="total_amount"
+              value={editForm.values.total_amount}
+              onChange={editForm.handleChange}
+              onBlur={editForm.handleBlur}
+              error={editForm.touched.total_amount ? editForm.errors.total_amount : undefined}
+            />
+            <Select
+              label="Division Method"
+              placeholder="Select method"
+              value={editForm.values.share_type}
+              onChange={(value) => editForm.setValues({ ...editForm.values, share_type: value })}
+              options={[
+                { value: "equal", label: "Equal Division" },
+                { value: "percentage", label: "Percentage Based" },
+                { value: "manual", label: "Manual Amounts" },
+              ]}
+              error={editForm.touched.share_type ? editForm.errors.share_type : undefined}
+            />
+            <DatePicker
+              label="Date"
+              value={editForm.values.expense_date}
+              onChange={(date) => editForm.setValues({ ...editForm.values, expense_date: date })}
+              error={editForm.touched.expense_date ? editForm.errors.expense_date : undefined}
+            />
+            <Input
+              label="Description"
+              name="description"
+              value={editForm.values.description}
+              onChange={editForm.handleChange}
+              onBlur={editForm.handleBlur}
+              error={editForm.touched.description ? editForm.errors.description : undefined}
+            />
+
+            {/* Division Details for Edit */}
+            {editForm.values.share_type !== "equal" && (
+              <div className="mt-4 border-t border-neutral-200 dark:border-neutral-700 pt-4">
+                <h4 className="text-sm font-semibold mb-3">Member Shares</h4>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {members.map((member) => (
+                    <div key={member.user_id} className="flex items-center justify-between gap-3 p-2 bg-neutral-50 dark:bg-neutral-800 rounded">
+                      <span className="text-sm font-medium">{member.full_name}</span>
+                      <div className="w-24">
+                        {editForm.values.share_type === "percentage" ? (
+                          <div className="relative">
+                            <input
+                              type="number"
+                              className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 text-sm outline-none"
+                              placeholder="0"
+                              value={memberShares[member.user_id]?.percentage || ""}
+                              onChange={(e) => setMemberShares({
+                                ...memberShares,
+                                [member.user_id]: { ...memberShares[member.user_id], percentage: e.target.value }
+                              })}
+                            />
+                            <span className="absolute right-2 top-1 text-xs text-neutral-400">%</span>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <span className="absolute left-2 top-1 text-xs text-neutral-400">৳</span>
+                            <input
+                              type="number"
+                              className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded pl-5 pr-2 py-1 text-sm outline-none"
+                              placeholder="0"
+                              value={memberShares[member.user_id]?.amount || ""}
+                              onChange={(e) => setMemberShares({
+                                ...memberShares,
+                                [member.user_id]: { ...memberShares[member.user_id], amount: e.target.value }
+                              })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => { setIsEditModalOpen(false); setSelectedExpense(null); }}>Cancel</Button>
+          <Button type="submit" form="edit-utility-form" isLoading={updateUtilityExpense.isPending}>Save Changes</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Import Modal */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import from Previous Month"
+        description={pastMonths.length > 0 ? `Showing utility expenses from ${pastMonths[0].month_year}` : "No previous month found"}
+      >
+        <ModalBody>
+          {previousMonthLoading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            </div>
+          ) : previousMonthExpenses.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-neutral-500">No utility expenses found in the previous month.</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {previousMonthExpenses.map((expense) => {
+                const Icon = getUtilityIcon(expense.utility_type);
+                const colorClass = getCategoryColor(expense.utility_type);
+                return (
+                  <div 
+                    key={expense.id} 
+                    className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:border-primary cursor-pointer transition-colors"
+                    onClick={() => handleImportExpense(expense)}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={cn("p-1.5 rounded", colorClass)}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <h4 className="font-semibold text-neutral-900 dark:text-white truncate flex-1">{expense.description}</h4>
+                      <span className="font-bold text-primary">{formatCurrency(expense.total_amount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-neutral-500">
+                      <span className="capitalize bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">{expense.share_type}</span>
+                      <span>{expense.member_shares.length} members</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setIsImportModalOpen(false)}>Cancel</Button>
         </ModalFooter>
       </Modal>
     </MainLayout>

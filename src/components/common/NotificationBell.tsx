@@ -6,6 +6,7 @@ import {
   type Notification,
   notificationService,
 } from "../../services/notificationService";
+import { onForegroundMessage } from "../../lib/pushNotifications";
 
 const NOTIFICATION_ICONS: Record<string, string> = {
   expense_added: "💰",
@@ -60,6 +61,18 @@ export function NotificationBell() {
     // Poll for new notifications every 30 seconds
     const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for foreground Firebase push messages and show a toast
+  useEffect(() => {
+    const unsubscribe = onForegroundMessage(({ title, body }) => {
+      toast.info(`${title ?? "New Notification"}: ${body ?? ""}`, {
+        duration: 5000,
+      });
+      // Refresh the notification list so the badge count updates
+      loadNotifications();
+    });
+    return unsubscribe;
   }, []);
 
   useEffect(() => {

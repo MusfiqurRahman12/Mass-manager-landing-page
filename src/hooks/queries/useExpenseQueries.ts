@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { expenseApi, type AddMealExpensePayload, type UpdateMealExpensePayload, type AddHomeRentPayload, type AddUtilityPayload } from "../../services/expenseApi";
+import { expenseApi, type AddMealExpensePayload, type UpdateMealExpensePayload, type AddHomeRentPayload, type UpdateHomeRentPayload, type AddUtilityPayload, type UpdateUtilityPayload } from "../../services/expenseApi";
 import { depositService, type AddDepositPayload, type UpdateDepositPayload } from "../../services/depositService";
 import { queryKeys } from "../../lib/queryKeys";
 import { toast } from "sonner";
@@ -71,6 +71,19 @@ export function useAddHomeRent() {
   });
 }
 
+export function useUpdateHomeRent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateHomeRentPayload }) =>
+      expenseApi.updateHomeRent(id, payload),
+    onSuccess: () => {
+      toast.success("Home rent updated successfully");
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update home rent"),
+  });
+}
+
 export function useDeleteHomeRent() {
   const qc = useQueryClient();
   return useMutation({
@@ -101,6 +114,19 @@ export function useAddUtilityExpense() {
       qc.invalidateQueries({ queryKey: ["expenses"] });
     },
     onError: (err: Error) => toast.error(err.message || "Failed to add utility expense"),
+  });
+}
+
+export function useUpdateUtilityExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateUtilityPayload }) =>
+      expenseApi.updateUtilityExpense(id, payload),
+    onSuccess: () => {
+      toast.success("Utility expense updated successfully");
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update utility expense"),
   });
 }
 
@@ -141,7 +167,7 @@ export function useDeposits(params?: Parameters<typeof depositService.getDeposit
   return useQuery({
     queryKey: queryKeys.deposits.list(params),
     queryFn: () => depositService.getDeposits(params),
-    enabled: !!params?.month_id,
+    enabled: params && "month_id" in params ? !!params.month_id : true,
   });
 }
 
