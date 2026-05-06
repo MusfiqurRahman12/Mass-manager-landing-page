@@ -110,12 +110,16 @@ export function NotificationsPage() {
   const deleteNotification = useDeleteNotification();
 
   // Derived
-  const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter(n => !n.type.startsWith("meal_"));
+  }, [notifications]);
+
+  const totalPages = Math.ceil(filteredNotifications.length / ITEMS_PER_PAGE);
   const paginatedNotifications = useMemo(
-    () => notifications.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-    [notifications, currentPage]
+    () => filteredNotifications.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filteredNotifications, currentPage]
   );
-  const unreadCount = useMemo(() => notifications.filter((n) => !n.is_read).length, [notifications]);
+  const unreadCount = useMemo(() => filteredNotifications.filter((n) => !n.is_read).length, [filteredNotifications]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleMarkAsRead = (notification: Notification) => {

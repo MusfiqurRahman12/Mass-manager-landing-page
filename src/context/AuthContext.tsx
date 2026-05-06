@@ -69,6 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.error("Failed to fetch mess for currency:", err);
             }
           }
+          
+          // Check/update push registration on page load/refresh
+          _tryRequestPush();
         } catch (error) {
           console.error("Failed to refresh user data:", error);
         }
