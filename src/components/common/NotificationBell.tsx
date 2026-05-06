@@ -53,8 +53,21 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Load dismissed IDs on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("bell_dismissed_notifications");
+    if (saved) {
+      try {
+        setDismissedIds(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse dismissed notifications");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     loadNotifications();
@@ -109,11 +122,20 @@ export function NotificationBell() {
 
       // Filter logic
       const filteredNotifs = notifs.filter((n) => {
+        // Filter by user preferences
         if (n.type.startsWith("meal_") && !prefs.meal_updates) return false;
         if (n.type.startsWith("expense_") && !prefs.expense_updates) return false;
         if (n.type.startsWith("deposit_") && !prefs.deposit_updates) return false;
         if (n.type.startsWith("manager_transfer") && !prefs.manager_transfer) return false;
         if (n.type === "market_day_reminder" && !prefs.market_day_reminder) return false;
+        
+        // Filter by locally dismissed IDs
+        const savedDismissed = localStorage.getItem("bell_dismissed_notifications");
+        if (savedDismissed) {
+          const dismissed: string[] = JSON.parse(savedDismissed);
+          if (dismissed.includes(n.id)) return false;
+        }
+        
         return true;
       });
 
@@ -159,6 +181,20 @@ export function NotificationBell() {
       toast.error(error instanceof Error ? error.message : "Failed to mark all as read");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDismiss = (notificationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newDismissed = [...dismissedIds, notificationId];
+    setDismissedIds(newDismissed);
+    localStorage.setItem("bell_dismissed_notifications", JSON.stringify(newDismissed));
+    setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    
+    // Adjust unread count if needed
+    const dismissedNotif = notifications.find((n) => n.id === notificationId);
+    if (dismissedNotif && !dismissedNotif.is_read) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     }
   };
 
@@ -341,9 +377,9 @@ export function NotificationBell() {
                           </button>
                         )}
                         <button
-                          onClick={(e) => handleDelete(notification.id, e)}
-                          className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded text-error"
-                          title="Delete"
+                          onClick={(e) => handleDismiss(notification.id, e)}
+                          className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                          title="Dismiss"
                         >
                           <svg
                             className="w-4 h-4"

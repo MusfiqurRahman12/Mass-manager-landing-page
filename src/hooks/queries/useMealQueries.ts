@@ -45,7 +45,7 @@ export function useUpdateMeal() {
       toast.success("Meal updated successfully");
       // Optimistically patch the cached list
       qc.setQueriesData<Meal[]>({ queryKey: queryKeys.meals.all }, (old) =>
-        old?.map((m) => (m.id === updated.id ? updated : m))
+        Array.isArray(old) ? old.map((m) => (m.id === updated.id ? updated : m)) : old
       );
       qc.invalidateQueries({ queryKey: queryKeys.meals.cost() });
     },
@@ -61,7 +61,7 @@ export function useDeleteMeal() {
       toast.success("Meal deleted successfully");
       // Remove immediately from cache
       qc.setQueriesData<Meal[]>({ queryKey: queryKeys.meals.all }, (old) =>
-        old?.filter((m) => m.id !== mealId)
+        Array.isArray(old) ? old.filter((m) => m.id !== mealId) : old
       );
       qc.invalidateQueries({ queryKey: queryKeys.meals.cost() });
     },
