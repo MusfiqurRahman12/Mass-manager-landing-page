@@ -291,7 +291,7 @@ export function NotificationBell() {
         <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 overflow-hidden z-50">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
-            <h3 className="font-semibold">Notifications</h3>
+            <h3 className="font-semibold text-neutral-900 dark:text-white">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
@@ -335,7 +335,7 @@ export function NotificationBell() {
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm line-clamp-1">
+                        <p className="font-medium text-sm text-neutral-900 dark:text-white line-clamp-1">
                           {notification.title}
                         </p>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mt-0.5">

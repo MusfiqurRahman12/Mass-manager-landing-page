@@ -64,7 +64,7 @@ export function RegisterPage() {
     <AuthLayout>
       <Card className="w-full max-w-md shadow-lg">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Get Started</h1>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">Get Started</h1>
           <p className="text-neutral-600 dark:text-neutral-400">
             Create your account in seconds
           </p>

@@ -8,6 +8,7 @@ import {
   Modal,
   ModalBody,
   ModalFooter,
+  Skeleton,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
@@ -15,7 +16,7 @@ import { formatCurrency } from "../utils";
 import { useActiveMonth, useStartNewMonth } from "../hooks/queries/useMonthQueries";
 import { useMembers } from "../hooks/queries/useMemberQueries";
 import { useMealCost } from "../hooks/queries/useMealQueries";
-import { useExpenseSummaryByMembers, useDeposits } from "../hooks/queries/useExpenseQueries";
+import { useExpenseSummaryByMembers, useDeposits, useExpenseSummaryTotals } from "../hooks/queries/useExpenseQueries";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -38,12 +39,18 @@ export function DashboardPage() {
   const { data: summaryData, isLoading: summaryLoading } = useExpenseSummaryByMembers(
     !isManager && activeMonth?.id ? activeMonth.id : undefined
   );
-
-  const isLoading =
-    monthLoading || membersLoading || costLoading || (isManager ? depositsLoading : summaryLoading);
+  const { data: summaryTotals, isLoading: summaryTotalsLoading } = useExpenseSummaryTotals(
+    isManager && activeMonth?.id ? activeMonth.id : undefined
+  );
 
   const totalDeposits = depositsData?.reduce((sum, d) => sum + d.amount, 0) ?? 0;
   const memberSummary = summaryData?.member_summaries?.[0] ?? null;
+
+  const mealExpenses = summaryTotals?.meal_expenses ?? 0;
+  const homeRent = summaryTotals?.home_rent ?? 0;
+  const utilities = summaryTotals?.utilities ?? 0;
+  const grandTotal = summaryTotals?.grand_total ?? 0;
+  const currentBalance = totalDeposits - grandTotal;
 
   // ── Mutation ──────────────────────────────────────────────────────────────
   const startNewMonthMutation = useStartNewMonth();
@@ -68,14 +75,6 @@ export function DashboardPage() {
   const getMonthName = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <LoadingSpinner fullScreen message="Loading dashboard..." />
-      </MainLayout>
-    );
-  }
-
   const currentMonthName = activeMonth ? getMonthName(activeMonth.month_year) : "No Active Month";
 
   return (
@@ -84,7 +83,7 @@ export function DashboardPage() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-2">
               Welcome back, {user?.full_name?.split(" ")[0]}! 👋
             </h1>
             <p className="text-lg text-neutral-600 dark:text-neutral-400">
@@ -92,8 +91,12 @@ export function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="primary" size="lg">{currentMonthName}</Badge>
-            {isManager && activeMonth && (
+            {monthLoading ? (
+              <Skeleton className="h-8 w-32" />
+            ) : (
+              <Badge variant="primary" size="lg">{currentMonthName}</Badge>
+            )}
+            {isManager && activeMonth && !monthLoading && (
               <Button variant="outline" size="sm" onClick={openStartMonthModal}>
                 Start New Month
               </Button>
@@ -102,7 +105,7 @@ export function DashboardPage() {
         </div>
 
         {/* Month Status Banner */}
-        {!activeMonth && (
+        {!activeMonth && !monthLoading && (
           <Card className="bg-warning/10 border-warning">
             <div className="flex items-center gap-3">
               <svg className="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,60 +122,83 @@ export function DashboardPage() {
 
         {/* KPI Cards */}
         {isManager ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
-            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
-              <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Meals</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{mealCost?.total_meal ?? 0}</h3>
-                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
-              </div>
-            </Card>
-
-            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💸</div>
-              <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Meal Rate</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(mealCost?.meal_rate ?? 0)}</h3>
-                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Per Meal</Badge>
-              </div>
-            </Card>
-
-            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💰</div>
-              <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Expenses</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(mealCost?.total_cost ?? 0)}</h3>
-                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">Current Month</Badge>
-              </div>
-            </Card>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💵</div>
               <div className="relative z-10">
                 <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Deposits</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(totalDeposits)}</h3>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {depositsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(totalDeposits)}
+                </h3>
                 <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">This Month</Badge>
               </div>
             </Card>
 
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">👥</div>
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
               <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Members</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{members.length}</h3>
-                <Badge variant="default" size="sm">Active</Badge>
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Meal Expenses</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(mealExpenses)}
+                </h3>
+                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🏠</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Home Rent</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(homeRent)}
+                </h3>
+                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Current Month</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚡</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Utilities</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(utilities)}
+                </h3>
+                <Badge variant="info" size="sm" className="bg-info/10 text-info border-info/20">Current Month</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">∑</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Grand Total</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(grandTotal)}
+                </h3>
+                <Badge variant="default" size="sm" className="bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">All Expenses</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚖️</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Current Balance</p>
+                <h3 className={`text-3xl font-bold mb-3 ${currentBalance < 0 ? 'text-red-500' : 'text-green-500 dark:text-green-400'}`}>
+                  {summaryTotalsLoading || depositsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(currentBalance)}
+                </h3>
+                <Badge variant={currentBalance < 0 ? "error" : "success"} size="sm">
+                  {currentBalance < 0 ? "Deficit" : "Surplus"}
+                </Badge>
               </div>
             </Card>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
               <div className="relative z-10">
                 <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Meals (Est.)</p>
                 <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 truncate">
-                  {mealCost?.meal_rate ? "Rate: " + formatCurrency(mealCost.meal_rate) : "0"}
+                  {costLoading ? <Skeleton className="h-8 w-32" /> : (mealCost?.meal_rate ? "Rate: " + formatCurrency(mealCost.meal_rate) : "0")}
                 </h3>
                 <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
               </div>
@@ -182,7 +208,9 @@ export function DashboardPage() {
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🏠</div>
               <div className="relative z-10">
                 <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Rent Share</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(memberSummary?.home_rent_share ?? 0)}</h3>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryLoading ? <Skeleton className="h-9 w-24" /> : formatCurrency(memberSummary?.home_rent_share ?? 0)}
+                </h3>
                 <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Home Rent</Badge>
               </div>
             </Card>
@@ -191,7 +219,9 @@ export function DashboardPage() {
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚡</div>
               <div className="relative z-10">
                 <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Utility Share</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(memberSummary?.utility_share ?? 0)}</h3>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryLoading ? <Skeleton className="h-9 w-24" /> : formatCurrency(memberSummary?.utility_share ?? 0)}
+                </h3>
                 <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">Utilities</Badge>
               </div>
             </Card>
@@ -200,7 +230,9 @@ export function DashboardPage() {
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🧾</div>
               <div className="relative z-10">
                 <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Total Due Share</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">{formatCurrency(memberSummary?.total_share ?? 0)}</h3>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(memberSummary?.total_share ?? 0)}
+                </h3>
                 <Badge variant="default" size="sm">Rent + Utility</Badge>
               </div>
             </Card>
@@ -220,7 +252,34 @@ export function DashboardPage() {
               </div>
             </div>
 
-            {activeMonth ? (
+            {monthLoading ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-5 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800/50 dark:to-neutral-800 rounded-xl border border-neutral-200/40 dark:border-neutral-700/40">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Opening Balance</p>
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                  <div className="p-5 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800/50 dark:to-neutral-800 rounded-xl border border-neutral-200/40 dark:border-neutral-700/40">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Closing Balance</p>
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-neutral-900/50 rounded-xl border border-neutral-100 dark:border-neutral-800/80 divide-y divide-neutral-100 dark:divide-neutral-800/80">
+                  <div className="flex justify-between items-center p-4">
+                    <span className="text-neutral-600 dark:text-neutral-400">Total Meals Consumed</span>
+                    <Skeleton className="h-6 w-12" />
+                  </div>
+                  <div className="flex justify-between items-center p-4">
+                    <span className="text-neutral-600 dark:text-neutral-400">Total Mess Cost</span>
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                  <div className="flex justify-between items-center p-4">
+                    <span className="text-neutral-600 dark:text-neutral-400">Current Meal Rate</span>
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                </div>
+              </div>
+            ) : activeMonth ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800/50 dark:to-neutral-800 rounded-xl border border-neutral-200/40 dark:border-neutral-700/40">
@@ -301,15 +360,15 @@ export function DashboardPage() {
           <div className="space-y-4">
             {activeMonth && (
               <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg space-y-2">
-                <h4 className="font-medium">Current Month Summary</h4>
+                <h4 className="font-medium text-neutral-900 dark:text-white">Current Month Summary</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-neutral-500">Total Meals</p>
-                    <p className="font-medium">{activeMonth.total_meal}</p>
+                    <p className="font-medium text-neutral-900 dark:text-white">{activeMonth.total_meal}</p>
                   </div>
                   <div>
                     <p className="text-neutral-500">Total Cost</p>
-                    <p className="font-medium">{formatCurrency(activeMonth.total_cost)}</p>
+                    <p className="font-medium text-neutral-900 dark:text-white">{formatCurrency(activeMonth.total_cost)}</p>
                   </div>
                   <div>
                     <p className="text-neutral-500">Meal Rate</p>

@@ -240,7 +240,7 @@ export function MembersPage() {
                   {getInitials(selectedMember.full_name)}
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold">{selectedMember.full_name}</h3>
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">{selectedMember.full_name}</h3>
                   <p className="text-neutral-500">{selectedMember.email}</p>
                   <Badge variant={selectedMember.role === "manager" ? "success" : "default"} className="mt-2">
                     {selectedMember.role === "manager" ? "Manager" : "Member"}

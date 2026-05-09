@@ -10,6 +10,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Skeleton,
 } from "../components/common";
 import { MainLayout } from "../components/layout";
 
@@ -197,7 +198,7 @@ export function ReportsPage() {
     setShowMemberModal(true);
   };
 
-  if (!isReady || isLoading) {
+  if (!isReady) {
     return (
       <MainLayout>
         <LoadingSpinner fullScreen message="Loading reports..." />
@@ -218,7 +219,7 @@ export function ReportsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">
               Monthly Report - {currentMonthName}
             </h1>
             <p className="text-neutral-600 dark:text-neutral-400">
@@ -259,17 +260,19 @@ export function ReportsPage() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
               <Card className="text-center p-6">
                 <p className="text-neutral-500 text-sm mb-2">Total Meals</p>
-                <h3 className="text-3xl font-bold mb-2">{allMembersTotalMeals}</h3>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">
+                  {mealExpensesLoading ? <Skeleton className="h-9 w-16 mx-auto" /> : allMembersTotalMeals}
+                </h3>
                 <Badge variant="primary">All Members</Badge>
               </Card>
 
               <Card className="text-center p-6">
                 <p className="text-neutral-500 text-sm mb-2">Meal Rate</p>
-                <h3 className="text-3xl font-bold mb-2">
-                  {formatCurrency(activeMonth?.meal_rate || 0)}
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">
+                  {monthLoading ? <Skeleton className="h-9 w-24 mx-auto" /> : formatCurrency(activeMonth?.meal_rate || 0)}
                 </h3>
                 <Badge variant="warning">Per Meal</Badge>
               </Card>
@@ -277,8 +280,8 @@ export function ReportsPage() {
               {isManager && (
                 <Card className="text-center p-6">
                   <p className="text-neutral-500 text-sm mb-2">Total Expenses</p>
-                  <h3 className="text-3xl font-bold mb-2">
-                    {formatCurrency(totalExpenses)}
+                  <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">
+                    {summaryLoading || mealExpensesLoading ? <Skeleton className="h-9 w-28 mx-auto" /> : formatCurrency(totalExpenses)}
                   </h3>
                   <Badge variant="error">Costs</Badge>
                 </Card>
@@ -286,8 +289,8 @@ export function ReportsPage() {
 
               <Card className="text-center p-6">
                 <p className="text-neutral-500 text-sm mb-2">Meal Expenses</p>
-                <h3 className="text-3xl font-bold mb-2">
-                  {formatCurrency(mealSummary?.total_meal_expenses || 0)}
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">
+                  {mealExpensesLoading ? <Skeleton className="h-9 w-28 mx-auto" /> : formatCurrency(mealSummary?.total_meal_expenses || 0)}
                 </h3>
                 <Badge variant="success">This Month</Badge>
               </Card>
@@ -298,7 +301,7 @@ export function ReportsPage() {
             {/* Member-wise Breakdown */}
             <Card>
               <div className="mb-4 pb-4 border-b border-neutral-200 dark:border-neutral-700">
-                <h2 className="text-xl font-bold">Member-wise Breakdown</h2>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Member-wise Breakdown</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -314,23 +317,33 @@ export function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="text-sm divide-y divide-neutral-100 dark:divide-neutral-800">
-                    {memberSummaries.map((summary) => (
-                      <tr
-                        key={summary.member.user_id}
-                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer"
-                        onClick={() => openMemberDetails(summary)}
-                      >
-                        <td className="py-3 font-medium">{summary.member.full_name}</td>
-                        <td className="py-3 text-right">{summary.totalMeals}</td>
-                        <td className="py-3 text-right">{formatCurrency(summary.mealCost)}</td>
-                        <td className="py-3 text-right">{formatCurrency(summary.homeRentShare)}</td>
-                        <td className="py-3 text-right">{formatCurrency(summary.utilityShare)}</td>
-                        <td className="py-3 text-right text-success font-medium">{formatCurrency(summary.totalDeposits)}</td>
-                        <td className={`py-3 text-right font-bold ${summary.balance >= 0 ? "text-success" : "text-error"}`}>
-                          {formatCurrency(summary.balance)}
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={7} className="py-8">
+                          <div className="space-y-4">
+                            <Skeleton className="h-10 w-full" count={3} />
+                          </div>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      memberSummaries.map((summary) => (
+                        <tr
+                          key={summary.member.user_id}
+                          className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer"
+                          onClick={() => openMemberDetails(summary)}
+                        >
+                          <td className="py-3 font-medium text-neutral-900 dark:text-white">{summary.member.full_name}</td>
+                          <td className="py-3 text-right">{summary.totalMeals}</td>
+                          <td className="py-3 text-right">{formatCurrency(summary.mealCost)}</td>
+                          <td className="py-3 text-right">{formatCurrency(summary.homeRentShare)}</td>
+                          <td className="py-3 text-right">{formatCurrency(summary.utilityShare)}</td>
+                          <td className="py-3 text-right text-success font-medium">{formatCurrency(summary.totalDeposits)}</td>
+                          <td className={`py-3 text-right font-bold ${summary.balance >= 0 ? "text-success" : "text-error"}`}>
+                            {formatCurrency(summary.balance)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                   {isManager && (
                   <tfoot className="font-bold border-t-2 border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
@@ -354,34 +367,46 @@ export function ReportsPage() {
             {/* Settlement Summary */}
             <Card className="bg-primary/5 border-primary/20">
               <div className="mb-4 pb-4 border-b border-primary/20">
-                <h2 className="text-xl font-bold">Settlement Summary</h2>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Settlement Summary</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="font-semibold mb-3 text-success">Members to Receive</h3>
                   <div className="space-y-2">
-                    {memberSummaries.filter((m) => m.balance > 0).sort((a, b) => b.balance - a.balance).map((summary) => (
-                      <div key={summary.member.user_id} className="flex justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0">
-                        <span>{summary.member.full_name}</span>
-                        <span className="font-medium text-success">{formatCurrency(summary.balance)}</span>
-                      </div>
-                    ))}
-                    {memberSummaries.filter((m) => m.balance > 0).length === 0 && (
-                      <p className="text-neutral-500 text-sm">No members to receive</p>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-full" count={2} />
+                    ) : (
+                      <>
+                        {memberSummaries.filter((m) => m.balance > 0).sort((a, b) => b.balance - a.balance).map((summary) => (
+                          <div key={summary.member.user_id} className="flex justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0">
+                            <span>{summary.member.full_name}</span>
+                            <span className="font-medium text-success">{formatCurrency(summary.balance)}</span>
+                          </div>
+                        ))}
+                        {memberSummaries.filter((m) => m.balance > 0).length === 0 && (
+                          <p className="text-neutral-500 text-sm">No members to receive</p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-3 text-error">Members to Pay</h3>
                   <div className="space-y-2">
-                    {memberSummaries.filter((m) => m.balance < 0).sort((a, b) => a.balance - b.balance).map((summary) => (
-                      <div key={summary.member.user_id} className="flex justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0">
-                        <span>{summary.member.full_name}</span>
-                        <span className="font-medium text-error">{formatCurrency(Math.abs(summary.balance))}</span>
-                      </div>
-                    ))}
-                    {memberSummaries.filter((m) => m.balance < 0).length === 0 && (
-                      <p className="text-neutral-500 text-sm">No members to pay</p>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-full" count={2} />
+                    ) : (
+                      <>
+                        {memberSummaries.filter((m) => m.balance < 0).sort((a, b) => a.balance - b.balance).map((summary) => (
+                          <div key={summary.member.user_id} className="flex justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0">
+                            <span>{summary.member.full_name}</span>
+                            <span className="font-medium text-error">{formatCurrency(Math.abs(summary.balance))}</span>
+                          </div>
+                        ))}
+                        {memberSummaries.filter((m) => m.balance < 0).length === 0 && (
+                          <p className="text-neutral-500 text-sm">No members to pay</p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -391,7 +416,7 @@ export function ReportsPage() {
             {/* Recent Expenses */}
             <Card>
               <div className="mb-4 pb-4 border-b border-neutral-200 dark:border-neutral-700">
-                <h2 className="text-xl font-bold">Recent Expenses</h2>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Recent Expenses</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -404,31 +429,41 @@ export function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="text-sm">
-                    {[
-                      ...mealExpenses.map(e => ({ ...e, type: "Meal", date: e.expense_date })),
-                      ...rentExpenses.map(e => ({ ...e, type: "Rent", date: e.expense_date })),
-                      ...utilityExpenses.map(e => ({ ...e, type: "Utility", date: e.expense_date }))
-                    ]
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .slice(0, 10)
-                    .map((expense, idx) => (
-                      <tr key={idx} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
-                        <td className="py-3">{new Date(expense.date).toLocaleDateString()}</td>
-                        <td className="py-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                            expense.type === "Meal" ? "bg-orange-100 text-orange-800" :
-                            expense.type === "Rent" ? "bg-blue-100 text-blue-800" :
-                            "bg-purple-100 text-purple-800"
-                          }`}>
-                            {expense.type}
-                          </span>
-                        </td>
-                        <td className="py-3">{expense.description}</td>
-                        <td className="py-3 text-right font-medium">
-                          {formatCurrency("total_amount" in expense ? expense.total_amount : expense.amount)}
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={4} className="py-8">
+                          <div className="space-y-4">
+                            <Skeleton className="h-10 w-full" count={3} />
+                          </div>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      [
+                        ...mealExpenses.map(e => ({ ...e, type: "Meal", date: e.expense_date })),
+                        ...rentExpenses.map(e => ({ ...e, type: "Rent", date: e.expense_date })),
+                        ...utilityExpenses.map(e => ({ ...e, type: "Utility", date: e.expense_date }))
+                      ]
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .slice(0, 10)
+                      .map((expense, idx) => (
+                        <tr key={idx} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+                          <td className="py-3">{new Date(expense.date).toLocaleDateString()}</td>
+                          <td className="py-3">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                              expense.type === "Meal" ? "bg-orange-100 text-orange-800" :
+                              expense.type === "Rent" ? "bg-blue-100 text-blue-800" :
+                              "bg-purple-100 text-purple-800"
+                            }`}>
+                              {expense.type}
+                            </span>
+                          </td>
+                          <td className="py-3">{expense.description}</td>
+                          <td className="py-3 text-right font-medium">
+                            {formatCurrency("total_amount" in expense ? expense.total_amount : expense.amount)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
                 {mealExpenses.length === 0 && rentExpenses.length === 0 && utilityExpenses.length === 0 && (
@@ -441,7 +476,7 @@ export function ReportsPage() {
             {isManager && (
             <Card className="overflow-hidden">
               <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-                <h2 className="text-xl font-bold">Financial Overview</h2>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Financial Overview</h2>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -512,13 +547,13 @@ export function ReportsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                   <p className="text-sm text-neutral-500">Total Meals</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {selectedMember.totalMeals}
                   </p>
                 </div>
                 <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                   <p className="text-sm text-neutral-500">Meal Cost</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {formatCurrency(selectedMember.mealCost)}
                   </p>
                 </div>

@@ -235,7 +235,7 @@ export function MealsPage() {
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Meal Management</h1>
             <p className="text-neutral-600 dark:text-neutral-400">Track daily meals and manage meal rates</p>
           </div>
-          {isManager && (
+          {false && (
             <Button variant="primary" onClick={openCostModal}>
               <DollarSign className="h-4 w-4 mr-2" />
               Set Meal Cost
@@ -244,7 +244,7 @@ export function MealsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <Card>
             <CardBody className="p-4">
               <div className="flex items-center gap-3">

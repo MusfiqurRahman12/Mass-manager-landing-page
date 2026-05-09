@@ -110,7 +110,7 @@ export function OnboardingPage() {
       <AuthLayout>
         <Card className="w-full max-w-lg shadow-lg">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome! 👋</h1>
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">Welcome! 👋</h1>
             <p className="text-neutral-600 dark:text-neutral-400">
               You're not part of any mess yet. What would you like to do?
             </p>
@@ -138,7 +138,7 @@ export function OnboardingPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
                     Create a New Mess
                   </h3>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -183,7 +183,7 @@ export function OnboardingPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
                     Join Existing Mess
                   </h3>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -239,7 +239,7 @@ export function OnboardingPage() {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2">Create Your Mess</h1>
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Create Your Mess</h1>
             <p className="text-neutral-600 dark:text-neutral-400">
               Set up your new mess household
             </p>
@@ -331,7 +331,7 @@ export function OnboardingPage() {
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">Join a Mess</h1>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Join a Mess</h1>
           <p className="text-neutral-600 dark:text-neutral-400">
             Enter the Mess ID provided by your manager
           </p>

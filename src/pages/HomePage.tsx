@@ -42,7 +42,7 @@ export function HomePage() {
         <section className="py-20 md:py-28 bg-neutral-50 dark:bg-neutral-900">
           <div className="container-max">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4">
                 Powerful Features
               </h2>
               <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
