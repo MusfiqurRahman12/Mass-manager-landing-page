@@ -260,7 +260,7 @@ export function ReportsPage() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
               <Card className="text-center p-6">
                 <p className="text-neutral-500 text-sm mb-2">Total Meals</p>
                 <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">

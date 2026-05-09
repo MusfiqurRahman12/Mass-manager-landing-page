@@ -210,7 +210,7 @@ export function MonthDetailsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
           <Card className="p-6">
             <p className="text-sm text-neutral-500 mb-1">Total Meals</p>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">{month.total_meal}</p>

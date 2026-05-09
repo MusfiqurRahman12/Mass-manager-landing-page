@@ -16,7 +16,7 @@ import { formatCurrency } from "../utils";
 import { useActiveMonth, useStartNewMonth } from "../hooks/queries/useMonthQueries";
 import { useMembers } from "../hooks/queries/useMemberQueries";
 import { useMealCost } from "../hooks/queries/useMealQueries";
-import { useExpenseSummaryByMembers, useDeposits } from "../hooks/queries/useExpenseQueries";
+import { useExpenseSummaryByMembers, useDeposits, useExpenseSummaryTotals } from "../hooks/queries/useExpenseQueries";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -39,9 +39,18 @@ export function DashboardPage() {
   const { data: summaryData, isLoading: summaryLoading } = useExpenseSummaryByMembers(
     !isManager && activeMonth?.id ? activeMonth.id : undefined
   );
+  const { data: summaryTotals, isLoading: summaryTotalsLoading } = useExpenseSummaryTotals(
+    isManager && activeMonth?.id ? activeMonth.id : undefined
+  );
 
   const totalDeposits = depositsData?.reduce((sum, d) => sum + d.amount, 0) ?? 0;
   const memberSummary = summaryData?.member_summaries?.[0] ?? null;
+
+  const mealExpenses = summaryTotals?.meal_expenses ?? 0;
+  const homeRent = summaryTotals?.home_rent ?? 0;
+  const utilities = summaryTotals?.utilities ?? 0;
+  const grandTotal = summaryTotals?.grand_total ?? 0;
+  const currentBalance = totalDeposits - grandTotal;
 
   // ── Mutation ──────────────────────────────────────────────────────────────
   const startNewMonthMutation = useStartNewMonth();
@@ -113,40 +122,7 @@ export function DashboardPage() {
 
         {/* KPI Cards */}
         {isManager ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
-            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
-              <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Meals</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
-                  {costLoading ? <Skeleton className="h-9 w-16" /> : (mealCost?.total_meal ?? 0)}
-                </h3>
-                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
-              </div>
-            </Card>
-
-            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💸</div>
-              <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Meal Rate</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
-                  {costLoading ? <Skeleton className="h-9 w-24" /> : formatCurrency(mealCost?.meal_rate ?? 0)}
-                </h3>
-                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Per Meal</Badge>
-              </div>
-            </Card>
-
-            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💰</div>
-              <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Expenses</p>
-                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
-                  {costLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(mealCost?.total_cost ?? 0)}
-                </h3>
-                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">Current Month</Badge>
-              </div>
-            </Card>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💵</div>
               <div className="relative z-10">
@@ -159,18 +135,64 @@ export function DashboardPage() {
             </Card>
 
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">👥</div>
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
               <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Members</p>
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Meal Expenses</p>
                 <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
-                  {membersLoading ? <Skeleton className="h-9 w-12" /> : members.length}
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(mealExpenses)}
                 </h3>
-                <Badge variant="default" size="sm">Active</Badge>
+                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🏠</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Total Home Rent</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(homeRent)}
+                </h3>
+                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Current Month</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚡</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Utilities</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(utilities)}
+                </h3>
+                <Badge variant="info" size="sm" className="bg-info/10 text-info border-info/20">Current Month</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">∑</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Grand Total</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(grandTotal)}
+                </h3>
+                <Badge variant="default" size="sm" className="bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">All Expenses</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚖️</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Current Balance</p>
+                <h3 className={`text-3xl font-bold mb-3 ${currentBalance < 0 ? 'text-red-500' : 'text-green-500 dark:text-green-400'}`}>
+                  {summaryTotalsLoading || depositsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(currentBalance)}
+                </h3>
+                <Badge variant={currentBalance < 0 ? "error" : "success"} size="sm">
+                  {currentBalance < 0 ? "Deficit" : "Surplus"}
+                </Badge>
               </div>
             </Card>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
               <div className="relative z-10">
