@@ -70,7 +70,7 @@ export function PendingTransferCard({
   return (
     <Card className="space-y-4 border-primary/30">
       <div>
-        <h2 className="text-xl font-semibold text-primary">
+        <h2 className="text-xl font-semibold text-primary dark:text-primary-light">
           Pending Manager Transfer
         </h2>
         <p className="text-sm text-neutral-600 dark:text-neutral-400">

@@ -166,7 +166,7 @@ export function MonthDetailsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
                 {getMonthName(month.month_year)}
               </h1>
               {month.is_active ? (
@@ -213,17 +213,17 @@ export function MonthDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="p-6">
             <p className="text-sm text-neutral-500 mb-1">Total Meals</p>
-            <p className="text-2xl font-bold">{month.total_meal}</p>
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{month.total_meal}</p>
           </Card>
           <Card className="p-6">
             <p className="text-sm text-neutral-500 mb-1">Meal Rate</p>
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">
               {formatCurrency(month.meal_rate)}
             </p>
           </Card>
           <Card className="p-6">
             <p className="text-sm text-neutral-500 mb-1">Total Meal Cost</p>
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">
               {formatCurrency(month.total_cost)}
             </p>
           </Card>
@@ -242,7 +242,7 @@ export function MonthDetailsPage() {
         {/* Member Summary */}
         <Card className="overflow-hidden">
           <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 className="text-xl font-semibold">Member Summary</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Member Summary</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -289,7 +289,7 @@ export function MonthDetailsPage() {
                             .substring(0, 2)}
                         </div>
                         <div>
-                          <p className="font-medium">
+                          <p className="font-medium text-neutral-900 dark:text-white">
                             {summary.member.full_name}
                           </p>
                           <p className="text-sm text-neutral-500">
@@ -346,7 +346,7 @@ export function MonthDetailsPage() {
         {/* Settlement Summary */}
         <Card className="overflow-hidden">
           <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 className="text-xl font-semibold">Settlement Summary</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Settlement Summary</h2>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -386,7 +386,7 @@ export function MonthDetailsPage() {
                               .toUpperCase()
                               .substring(0, 2)}
                           </div>
-                          <span className="font-medium">
+                          <span className="font-medium text-neutral-900 dark:text-white">
                             {summary.member.full_name}
                           </span>
                         </div>
@@ -440,7 +440,7 @@ export function MonthDetailsPage() {
                               .toUpperCase()
                               .substring(0, 2)}
                           </div>
-                          <span className="font-medium">
+                          <span className="font-medium text-neutral-900 dark:text-white">
                             {summary.member.full_name}
                           </span>
                         </div>
@@ -503,7 +503,7 @@ export function MonthDetailsPage() {
         {isManager && (
           <Card className="overflow-hidden">
             <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-              <h2 className="text-xl font-semibold">Expense Breakdown</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Expense Breakdown</h2>
             </div>
             <div className="p-6">
               {expensesByCategory.length === 0 ? (
@@ -515,7 +515,7 @@ export function MonthDetailsPage() {
                   {expensesByCategory.map((expense) => (
                     <div key={expense.category}>
                       <div className="flex justify-between mb-1">
-                        <span className="font-medium">
+                        <span className="font-medium text-neutral-900 dark:text-white">
                           {getCategoryLabel(expense.category)}
                         </span>
                         <span className="text-neutral-600 dark:text-neutral-400">
@@ -546,7 +546,7 @@ export function MonthDetailsPage() {
         {/* Recent Transactions */}
         <Card className="overflow-hidden">
           <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 className="text-xl font-semibold">Recent Transactions</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Recent Transactions</h2>
           </div>
           <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
             {[
@@ -581,7 +581,7 @@ export function MonthDetailsPage() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium text-neutral-900 dark:text-white">
                           {transaction.type}
                         </p>
                         <p className="text-sm text-neutral-500">

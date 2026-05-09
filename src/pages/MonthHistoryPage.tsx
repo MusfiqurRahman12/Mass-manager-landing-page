@@ -31,7 +31,7 @@ export function MonthHistoryPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Month History</h1>
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">Month History</h1>
             <p className="text-neutral-600 dark:text-neutral-400">View past months and their statements</p>
           </div>
           <Button variant="outline" onClick={() => navigate("/dashboard")}>
@@ -62,7 +62,7 @@ export function MonthHistoryPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-xl font-semibold">{getMonthName(month.month_year)}</h3>
+                        <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">{getMonthName(month.month_year)}</h3>
                         {getStatusBadge(month)}
                       </div>
                       <p className="text-sm text-neutral-500">
@@ -74,15 +74,15 @@ export function MonthHistoryPage() {
                   <div className="flex items-center gap-6 text-sm">
                     <div className="text-center">
                       <p className="text-neutral-500">Meals</p>
-                      <p className="font-semibold">{month.total_meal}</p>
+                      <p className="font-semibold text-neutral-900 dark:text-white">{month.total_meal}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-neutral-500">Rate</p>
-                      <p className="font-semibold">{formatCurrency(month.meal_rate)}</p>
+                      <p className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(month.meal_rate)}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-neutral-500">Cost</p>
-                      <p className="font-semibold">{formatCurrency(month.total_cost)}</p>
+                      <p className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(month.total_cost)}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-neutral-500">Balance</p>

@@ -300,7 +300,7 @@ export function SettingsPage() {
         <Card className="space-y-6">
           <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-700 pb-4">
             <div>
-              <h2 className="text-xl font-semibold">Profile</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Profile</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Manage your personal information
               </p>
@@ -335,7 +335,7 @@ export function SettingsPage() {
             {/* Profile Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">
                   Full Name
                 </label>
                 <Input
@@ -353,7 +353,7 @@ export function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
+                <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">Email</label>
                 <Input
                   type="email"
                   value={profileData.email}
@@ -369,7 +369,7 @@ export function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">
                   Phone (Optional)
                 </label>
                 <Input
@@ -423,7 +423,7 @@ export function SettingsPage() {
         {/* Theme Preferences */}
         <Card className="space-y-6">
           <div className="border-b border-neutral-200 dark:border-neutral-700 pb-4">
-            <h2 className="text-xl font-semibold">Appearance</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Appearance</h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Customize your app theme
             </p>
@@ -460,7 +460,7 @@ export function SettingsPage() {
         {/* Notification Settings */}
         <Card className="space-y-6">
           <div className="border-b border-neutral-200 dark:border-neutral-700 pb-4">
-            <h2 className="text-xl font-semibold">Notifications</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Notifications</h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Choose what notifications you want to receive
             </p>
@@ -530,7 +530,7 @@ export function SettingsPage() {
         <Card className="space-y-6">
           <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-700 pb-4">
             <div>
-              <h2 className="text-xl font-semibold">Mess Information</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Mess Information</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Update your mess details
               </p>
@@ -648,7 +648,7 @@ export function SettingsPage() {
         {/* Mess ID Display */}
         <Card className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold">Mess ID</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Mess ID</h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Share this ID with others to let them join your mess
             </p>
