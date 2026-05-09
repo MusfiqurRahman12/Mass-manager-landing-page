@@ -198,19 +198,7 @@ export function NotificationBell() {
     }
   };
 
-  const handleDelete = async (notificationId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await notificationService.deleteNotification(notificationId);
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-      const deletedNotif = notifications.find((n) => n.id === notificationId);
-      if (deletedNotif && !deletedNotif.is_read) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete notification");
-    }
-  };
+
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.is_read) {
