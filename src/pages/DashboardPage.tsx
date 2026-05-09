@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  LoadingSpinner,
   Modal,
   ModalBody,
   ModalFooter,
@@ -14,7 +13,6 @@ import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { formatCurrency } from "../utils";
 import { useActiveMonth, useStartNewMonth } from "../hooks/queries/useMonthQueries";
-import { useMembers } from "../hooks/queries/useMemberQueries";
 import { useMealCost } from "../hooks/queries/useMealQueries";
 import { useExpenseSummaryByMembers, useDeposits, useExpenseSummaryTotals } from "../hooks/queries/useExpenseQueries";
 
@@ -29,7 +27,6 @@ export function DashboardPage() {
 
   // ── Data Queries ──────────────────────────────────────────────────────────
   const { data: activeMonth, isLoading: monthLoading } = useActiveMonth();
-  const { data: members = [], isLoading: membersLoading } = useMembers();
   const { data: mealCost, isLoading: costLoading } = useMealCost();
 
   // Conditional queries — only fetch when we have a month
@@ -163,7 +160,7 @@ export function DashboardPage() {
                 <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
                   {summaryTotalsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(utilities)}
                 </h3>
-                <Badge variant="info" size="sm" className="bg-info/10 text-info border-info/20">Current Month</Badge>
+                <Badge variant="primary" size="sm" className="bg-info/10 text-info border-info/20">Current Month</Badge>
               </div>
             </Card>
 
