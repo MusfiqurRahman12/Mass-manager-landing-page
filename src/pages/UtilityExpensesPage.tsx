@@ -970,10 +970,15 @@ export function UtilityExpensesPage() {
               setIsDeleteModalOpen(false);
               setExpenseToDelete(null);
             }}
+            disabled={deleteUtilityExpense.isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            isLoading={deleteUtilityExpense.isPending}
+          >
             Delete
           </Button>
         </ModalFooter>

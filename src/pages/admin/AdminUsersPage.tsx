@@ -130,12 +130,12 @@ export function AdminUsersPage() {
                 This will permanently delete the user and their data.
               </p>
               <div className="admin-modal__actions">
-                <button className="admin-btn admin-btn--ghost" onClick={() => setDeleteId(null)}>
+                <button className="admin-btn admin-btn--ghost" onClick={() => setDeleteId(null)} disabled={deleteUser.isPending}>
                   Cancel
                 </button>
                 <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(deleteId)} disabled={deleteUser.isPending}>
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {deleteUser.isPending ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

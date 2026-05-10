@@ -125,7 +125,6 @@ export function HomeRentExpensePage() {
       if (isNaN(amount) || amount <= 0) errors.total_amount = "Amount must be greater than 0";
       if (!values.share_type) errors.share_type = "Please select a share type";
       if (!values.expense_date) errors.expense_date = "Please select a date";
-      if (!values.description.trim()) errors.description = "Please enter a description";
       return errors;
     },
     onSubmit: async (values) => {
@@ -133,9 +132,11 @@ export function HomeRentExpensePage() {
       const payload: AddHomeRentPayload = {
         total_amount: parseFloat(values.total_amount),
         share_type: values.share_type as ShareType,
-        description: values.description.trim(),
         expense_date: values.expense_date,
       };
+      if (values.description?.trim()) {
+        payload.description = values.description.trim();
+      }
       if (values.share_type === "percentage" || values.share_type === "manual") {
         payload.member_shares = members.map(m => {
           const share = memberShares[m.user_id];
@@ -167,7 +168,6 @@ export function HomeRentExpensePage() {
       if (isNaN(amount) || amount <= 0) errors.total_amount = "Amount must be greater than 0";
       if (!values.share_type) errors.share_type = "Please select a share type";
       if (!values.expense_date) errors.expense_date = "Please select a date";
-      if (!values.description.trim()) errors.description = "Please enter a description";
       return errors;
     },
     onSubmit: async (values) => {
@@ -175,9 +175,11 @@ export function HomeRentExpensePage() {
       const payload: Partial<AddHomeRentPayload> = {
         total_amount: parseFloat(values.total_amount),
         share_type: values.share_type as ShareType,
-        description: values.description.trim(),
         expense_date: values.expense_date,
       };
+      if (values.description?.trim()) {
+        payload.description = values.description.trim();
+      }
       if (values.share_type === "percentage" || values.share_type === "manual") {
         payload.member_shares = members.map(m => {
           const share = memberShares[m.user_id];
@@ -200,7 +202,7 @@ export function HomeRentExpensePage() {
       total_amount: expense.total_amount.toString(),
       share_type: expense.share_type,
       expense_date: expense.expense_date,
-      description: expense.description,
+      description: expense.description || "",
     });
     
     // Set member shares
@@ -223,7 +225,7 @@ export function HomeRentExpensePage() {
       total_amount: expense.total_amount.toString(),
       share_type: expense.share_type,
       expense_date: format(new Date(), "yyyy-MM-dd"), // Use today's date for imported
-      description: expense.description + " (Imported)",
+      description: (expense.description || "Rent") + " (Imported)",
     });
 
     // Populate shares based on the imported expense
@@ -838,10 +840,15 @@ export function HomeRentExpensePage() {
               setIsDeleteModalOpen(false);
               setExpenseToDelete(null);
             }}
+            disabled={deleteHomeRent.isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            isLoading={deleteHomeRent.isPending}
+          >
             Delete
           </Button>
         </ModalFooter>

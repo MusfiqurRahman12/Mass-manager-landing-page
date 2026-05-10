@@ -642,8 +642,8 @@ export function MealsPage() {
         description="Are you sure you want to delete this meal entry? This action cannot be undone."
       >
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setIsDeleteModalOpen(false); setMealToDelete(null); }}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMeal.isPending}>Delete</Button>
+          <Button variant="ghost" onClick={() => { setIsDeleteModalOpen(false); setMealToDelete(null); }} disabled={deleteMeal.isPending}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMeal.isPending} disabled={deleteMeal.isPending}>Delete</Button>
         </ModalFooter>
       </Modal>
 

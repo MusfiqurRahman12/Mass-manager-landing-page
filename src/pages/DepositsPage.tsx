@@ -910,10 +910,15 @@ export function DepositsPage() {
               setIsDeleteModalOpen(false);
               setDepositToDelete(null);
             }}
+            disabled={deleteDeposit.isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            isLoading={deleteDeposit.isPending}
+          >
             Delete
           </Button>
         </ModalFooter>

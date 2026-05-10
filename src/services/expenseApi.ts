@@ -84,7 +84,7 @@ export interface HomeRentExpense {
 export interface AddHomeRentPayload {
   total_amount: number;
   share_type: ShareType;
-  description: string;
+  description?: string;
   expense_date: string;
   member_shares?: MemberShareInput[];
 }

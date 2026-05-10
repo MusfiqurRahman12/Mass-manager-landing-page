@@ -727,10 +727,15 @@ export function MealExpensesPage() {
               setIsDeleteModalOpen(false);
               setExpenseToDelete(null);
             }}
+            disabled={deleteMealExpense.isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            isLoading={deleteMealExpense.isPending}
+          >
             Delete
           </Button>
         </ModalFooter>

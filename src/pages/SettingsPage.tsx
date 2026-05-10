@@ -799,6 +799,7 @@ export function SettingsPage() {
           <Button
             variant="ghost"
             onClick={() => setIsDeleteModalOpen(false)}
+            disabled={deleteMess.isPending}
           >
             Cancel
           </Button>
