@@ -3,6 +3,7 @@ import {
   Calculator,
   ChevronLeft,
   ChevronRight,
+  Eye,
   Home,
   Percent,
   Plus,
@@ -60,6 +61,8 @@ export function HomeRentExpensePage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareExpense, setShareExpense] = useState<HomeRentExpense | null>(null);
   const [selectedExpense, setSelectedExpense] = useState<HomeRentExpense | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<HomeRentExpense | null>(null);
   const [previewData, setPreviewData] = useState<{
@@ -125,7 +128,6 @@ export function HomeRentExpensePage() {
       if (isNaN(amount) || amount <= 0) errors.total_amount = "Amount must be greater than 0";
       if (!values.share_type) errors.share_type = "Please select a share type";
       if (!values.expense_date) errors.expense_date = "Please select a date";
-      if (!values.description.trim()) errors.description = "Please enter a description";
       return errors;
     },
     onSubmit: async (values) => {
@@ -133,9 +135,11 @@ export function HomeRentExpensePage() {
       const payload: AddHomeRentPayload = {
         total_amount: parseFloat(values.total_amount),
         share_type: values.share_type as ShareType,
-        description: values.description.trim(),
         expense_date: values.expense_date,
       };
+      if (values.description?.trim()) {
+        payload.description = values.description.trim();
+      }
       if (values.share_type === "percentage" || values.share_type === "manual") {
         payload.member_shares = members.map(m => {
           const share = memberShares[m.user_id];
@@ -167,7 +171,6 @@ export function HomeRentExpensePage() {
       if (isNaN(amount) || amount <= 0) errors.total_amount = "Amount must be greater than 0";
       if (!values.share_type) errors.share_type = "Please select a share type";
       if (!values.expense_date) errors.expense_date = "Please select a date";
-      if (!values.description.trim()) errors.description = "Please enter a description";
       return errors;
     },
     onSubmit: async (values) => {
@@ -175,9 +178,11 @@ export function HomeRentExpensePage() {
       const payload: Partial<AddHomeRentPayload> = {
         total_amount: parseFloat(values.total_amount),
         share_type: values.share_type as ShareType,
-        description: values.description.trim(),
         expense_date: values.expense_date,
       };
+      if (values.description?.trim()) {
+        payload.description = values.description.trim();
+      }
       if (values.share_type === "percentage" || values.share_type === "manual") {
         payload.member_shares = members.map(m => {
           const share = memberShares[m.user_id];
@@ -200,7 +205,7 @@ export function HomeRentExpensePage() {
       total_amount: expense.total_amount.toString(),
       share_type: expense.share_type,
       expense_date: expense.expense_date,
-      description: expense.description,
+      description: expense.description || "",
     });
     
     // Set member shares
@@ -223,7 +228,7 @@ export function HomeRentExpensePage() {
       total_amount: expense.total_amount.toString(),
       share_type: expense.share_type,
       expense_date: format(new Date(), "yyyy-MM-dd"), // Use today's date for imported
-      description: expense.description + " (Imported)",
+      description: (expense.description || "Rent") + " (Imported)",
     });
 
     // Populate shares based on the imported expense
@@ -637,11 +642,9 @@ export function HomeRentExpensePage() {
                         <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                           Members
                         </th>
-                        {isManager && (
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                            Actions
-                          </th>
-                        )}
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -672,26 +675,36 @@ export function HomeRentExpensePage() {
                           <td className="py-3 px-4 text-sm text-neutral-600 dark:text-neutral-400 text-right">
                             {expense.member_shares.length} members
                           </td>
-                          {isManager && (
-                            <td className="py-3 px-4 text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEdit(expense)}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(expense)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-error" />
-                                </Button>
-                              </div>
-                            </td>
-                          )}
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                title="View share details"
+                                onClick={() => { setShareExpense(expense); setIsShareModalOpen(true); }}
+                              >
+                                <Eye className="h-4 w-4 text-primary" />
+                              </Button>
+                              {isManager && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(expense)}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDelete(expense)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-error" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -838,10 +851,15 @@ export function HomeRentExpensePage() {
               setIsDeleteModalOpen(false);
               setExpenseToDelete(null);
             }}
+            disabled={deleteHomeRent.isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            isLoading={deleteHomeRent.isPending}
+          >
             Delete
           </Button>
         </ModalFooter>
@@ -983,6 +1001,75 @@ export function HomeRentExpensePage() {
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" onClick={() => setIsImportModalOpen(false)}>Cancel</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Share Details Modal */}
+      <Modal
+        isOpen={isShareModalOpen}
+        onClose={() => { setIsShareModalOpen(false); setShareExpense(null); }}
+        title="Member Share Details"
+        description={shareExpense ? `Home Rent — ${format(parseISO(shareExpense.expense_date), "MMM dd, yyyy")}` : undefined}
+      >
+        <ModalBody>
+          {shareExpense && (
+            <div className="space-y-4">
+              {/* Summary row */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-900/30">
+                    <Home className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 capitalize">{shareExpense.share_type} division</span>
+                </div>
+                <span className="text-lg font-bold text-neutral-900 dark:text-white">{formatCurrency(shareExpense.total_amount)}</span>
+              </div>
+
+              {/* Member shares table */}
+              <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-neutral-100 dark:bg-neutral-800">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Member</th>
+                      <th className="px-4 py-3 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-right">Share %</th>
+                      <th className="px-4 py-3 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {shareExpense.member_shares.map((share) => (
+                      <tr key={share.member_id} className="hover:bg-neutral-100/50 dark:hover:bg-neutral-800/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                              {share.member_name?.charAt(0).toUpperCase() ?? "?"}
+                            </div>
+                            <span className="text-sm font-medium text-neutral-900 dark:text-white">{share.member_name ?? share.member_id}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+                            {share.percentage !== null && share.percentage !== undefined ? `${Number(share.percentage).toFixed(1)}%` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-neutral-900 dark:text-white">
+                          {formatCurrency(share.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-neutral-100/50 dark:bg-neutral-800/50 border-t-2 border-neutral-200 dark:border-neutral-700">
+                    <tr>
+                      <td className="px-4 py-3 font-bold text-neutral-900 dark:text-white" colSpan={2}>Total</td>
+                      <td className="px-4 py-3 text-right font-black text-lg text-primary">{formatCurrency(shareExpense.total_amount)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => { setIsShareModalOpen(false); setShareExpense(null); }}>Close</Button>
         </ModalFooter>
       </Modal>
 

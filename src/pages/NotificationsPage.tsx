@@ -365,10 +365,10 @@ export function NotificationsPage() {
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button variant="outline" onClick={() => { setShowDeleteModal(false); setNotificationToDelete(null); }}>
+            <Button variant="outline" onClick={() => { setShowDeleteModal(false); setNotificationToDelete(null); }} disabled={deleteNotification.isPending}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={handleDelete} isLoading={deleteNotification.isPending}>
+            <Button variant="danger" onClick={handleDelete} isLoading={deleteNotification.isPending} disabled={deleteNotification.isPending}>
               Delete
             </Button>
           </ModalFooter>

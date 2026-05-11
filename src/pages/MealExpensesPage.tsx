@@ -65,6 +65,7 @@ export function MealExpensesPage() {
   const [expenseToApprove, setExpenseToApprove] = useState<MealExpense | null>(null);
   const [addDeposit, setAddDeposit] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [spentByFilter, setSpentByFilter] = useState<string>("");
 
   // ── Data Queries ──────────────────────────────────────────────────────────
   const { data: mealData, isLoading } = useMealExpenses();
@@ -78,8 +79,13 @@ export function MealExpensesPage() {
 
 
   const expenses = mealData?.expenses || [];
-  const totalPages = Math.ceil(expenses.length / ITEMS_PER_PAGE);
-  const paginatedExpenses = expenses.slice(
+  
+  const filteredExpenses = spentByFilter
+    ? expenses.filter(e => e.created_by === spentByFilter)
+    : expenses;
+
+  const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
+  const paginatedExpenses = filteredExpenses.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
@@ -402,9 +408,26 @@ export function MealExpensesPage() {
         {/* Expense List */}
         <Card>
           <CardHeader className="pb-4">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Meal Expense Records
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                Meal Expense Records
+              </h2>
+              <select
+                className="w-full sm:w-48 px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm text-neutral-900 dark:text-white transition-all"
+                value={spentByFilter}
+                onChange={(e) => {
+                  setSpentByFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Members</option>
+                {members.map((m) => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </CardHeader>
           <CardBody>
             {isLoading ? (
@@ -437,6 +460,9 @@ export function MealExpensesPage() {
                         <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                           Description
                         </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                          Spent By
+                        </th>
                         <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                           Amount
                         </th>
@@ -461,6 +487,9 @@ export function MealExpensesPage() {
                           </td>
                           <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white max-w-xs truncate">
                             {expense.description}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white">
+                            {members.find(m => m.user_id === expense.created_by)?.full_name || expense.created_by || 'Unknown'}
                           </td>
                           <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white text-right font-medium">
                             {formatCurrency(expense.amount)}
@@ -533,9 +562,9 @@ export function MealExpensesPage() {
                       Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                       {Math.min(
                         currentPage * ITEMS_PER_PAGE,
-                        expenses.length,
+                        filteredExpenses.length,
                       )}{" "}
-                      of {expenses.length} expenses
+                      of {filteredExpenses.length} expenses
                     </p>
                     <div className="flex items-center gap-2">
                       <Button
@@ -727,10 +756,15 @@ export function MealExpensesPage() {
               setIsDeleteModalOpen(false);
               setExpenseToDelete(null);
             }}
+            disabled={deleteMealExpense.isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            isLoading={deleteMealExpense.isPending}
+          >
             Delete
           </Button>
         </ModalFooter>

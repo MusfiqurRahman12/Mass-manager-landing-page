@@ -7,8 +7,6 @@ import {
   Edit,
   Plus,
   Trash2,
-  TrendingUp,
-  Users,
   Utensils,
   ChevronDown,
   Check,
@@ -245,81 +243,61 @@ export function MealsPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600">
-                  <Utensils className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">My Total Meals</p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatNumber(myTotalMeals)}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">My Meals</p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatNumber(myTotalMeals)}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-primary">
-                  <Utensils className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Meals</p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatNumber(mealCost?.total_meal || 0)}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">📊</div>
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Total Meals</p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatNumber(mealCost?.total_meal || 0)}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Meal Rate</p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(mealCost?.meal_rate || 0)}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">📈</div>
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Meal Rate</p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(mealCost?.meal_rate || 0)}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Cost</p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(mealCost?.total_cost || 0)}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💰</div>
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Total Meal Cost</p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(mealCost?.total_cost || 0)}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Today's Meals</p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? <Skeleton className="h-8 w-16" /> : todayMeals}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">📅</div>
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Today's Meals</p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? <Skeleton className="h-8 w-16" /> : todayMeals}
                 </div>
               </div>
             </CardBody>
@@ -642,8 +620,8 @@ export function MealsPage() {
         description="Are you sure you want to delete this meal entry? This action cannot be undone."
       >
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setIsDeleteModalOpen(false); setMealToDelete(null); }}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMeal.isPending}>Delete</Button>
+          <Button variant="ghost" onClick={() => { setIsDeleteModalOpen(false); setMealToDelete(null); }} disabled={deleteMeal.isPending}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMeal.isPending} disabled={deleteMeal.isPending}>Delete</Button>
         </ModalFooter>
       </Modal>
 

@@ -316,8 +316,8 @@ export function MembersPage() {
               <p>Are you sure you want to remove <strong>{memberToRemove.full_name}</strong> from the mess? This action cannot be undone.</p>
             </ModalBody>
             <ModalFooter>
-              <Button variant="outline" onClick={() => { setShowRemoveConfirm(false); setMemberToRemove(null); }}>Cancel</Button>
-              <Button variant="danger" onClick={handleRemoveMember} isLoading={removeMember.isPending}>Remove</Button>
+              <Button variant="outline" onClick={() => { setShowRemoveConfirm(false); setMemberToRemove(null); }} disabled={removeMember.isPending}>Cancel</Button>
+              <Button variant="danger" onClick={handleRemoveMember} isLoading={removeMember.isPending} disabled={removeMember.isPending}>Remove</Button>
             </ModalFooter>
           </>
         )}

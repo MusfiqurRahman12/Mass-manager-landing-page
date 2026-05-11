@@ -177,6 +177,7 @@ export function AdminMessesPage() {
                 <button
                   className="admin-btn admin-btn--ghost"
                   onClick={() => setDeleteId(null)}
+                  disabled={deleteMess.isPending}
                 >
                   Cancel
                 </button>
@@ -186,7 +187,7 @@ export function AdminMessesPage() {
                   disabled={deleteMess.isPending}
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {deleteMess.isPending ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

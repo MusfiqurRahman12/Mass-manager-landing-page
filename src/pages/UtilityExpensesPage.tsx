@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Droplets,
+  Eye,
   Flame,
   Percent,
   Plus,
@@ -100,7 +101,7 @@ export function UtilityExpensesPage() {
   const [filterType, setFilterType] = useState<string>("");
 
   const { data: members = [] } = useMembers();
-  const { data: utilities = [], isLoading } = useUtilityExpenses(filterType as UtilityType);
+  const { data: utilities = [], isLoading } = useUtilityExpenses();
   const addUtilityExpense = useAddUtilityExpense();
   const updateUtilityExpense = useUpdateUtilityExpense();
   const deleteUtilityExpense = useDeleteUtilityExpense();
@@ -115,6 +116,8 @@ export function UtilityExpensesPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareExpense, setShareExpense] = useState<UtilityExpense | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<UtilityExpense | null>(null);
   const [selectedExpense, setSelectedExpense] = useState<UtilityExpense | null>(null);
   const [previewData, setPreviewData] = useState<{
@@ -700,7 +703,7 @@ export function UtilityExpensesPage() {
               <Select
                 placeholder="Filter by type"
                 value={filterType}
-                onChange={setFilterType}
+                onChange={(value) => { setFilterType(value); setCurrentPage(1); }}
                 options={[
                   { value: "", label: "All Types" },
                   { value: "electricity", label: "Electricity" },
@@ -756,11 +759,9 @@ export function UtilityExpensesPage() {
                         <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                           Total Amount
                         </th>
-                        {isManager && (
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                            Actions
-                          </th>
-                        )}
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -804,26 +805,36 @@ export function UtilityExpensesPage() {
                             <td className="py-3 px-4 text-sm text-neutral-900 dark:text-white text-right font-medium">
                               {formatCurrency(expense.total_amount)}
                             </td>
-                            {isManager && (
-                              <td className="py-3 px-4 text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEdit(expense)}
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDelete(expense)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-error" />
-                                  </Button>
-                                </div>
-                              </td>
-                            )}
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="View share details"
+                                  onClick={() => { setShareExpense(expense); setIsShareModalOpen(true); }}
+                                >
+                                  <Eye className="h-4 w-4 text-primary" />
+                                </Button>
+                                {isManager && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEdit(expense)}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDelete(expense)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-error" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
                           </tr>
                         );
                       })}
@@ -970,10 +981,15 @@ export function UtilityExpensesPage() {
               setIsDeleteModalOpen(false);
               setExpenseToDelete(null);
             }}
+            disabled={deleteUtilityExpense.isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            isLoading={deleteUtilityExpense.isPending}
+          >
             Delete
           </Button>
         </ModalFooter>
@@ -1136,6 +1152,73 @@ export function UtilityExpensesPage() {
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" onClick={() => setIsImportModalOpen(false)}>Cancel</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Share Details Modal */}
+      <Modal
+        isOpen={isShareModalOpen}
+        onClose={() => { setIsShareModalOpen(false); setShareExpense(null); }}
+        title="Member Share Details"
+        description={shareExpense ? `${shareExpense.utility_type.charAt(0).toUpperCase() + shareExpense.utility_type.slice(1)} — ${format(parseISO(shareExpense.expense_date), "MMM dd, yyyy")}` : undefined}
+      >
+        <ModalBody>
+          {shareExpense && (
+            <div className="space-y-4">
+              {/* Summary row */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                <div className="flex items-center gap-2">
+                  {(() => { const Icon = getUtilityIcon(shareExpense.utility_type); const color = getCategoryColor(shareExpense.utility_type); return <div className={cn("p-1.5 rounded", color)}><Icon className="h-4 w-4" /></div>; })()}
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 capitalize">{shareExpense.share_type || "equal"} division</span>
+                </div>
+                <span className="text-lg font-bold text-neutral-900 dark:text-white">{formatCurrency(shareExpense.total_amount)}</span>
+              </div>
+
+              {/* Member shares table */}
+              <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-neutral-100 dark:bg-neutral-800">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Member</th>
+                      <th className="px-4 py-3 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-right">Share %</th>
+                      <th className="px-4 py-3 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {shareExpense.member_shares.map((share) => (
+                      <tr key={share.member_id} className="hover:bg-neutral-100/50 dark:hover:bg-neutral-800/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                              {share.member_name?.charAt(0).toUpperCase() ?? "?"}
+                            </div>
+                            <span className="text-sm font-medium text-neutral-900 dark:text-white">{share.member_name ?? share.member_id}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+                            {share.percentage !== null && share.percentage !== undefined ? `${Number(share.percentage).toFixed(1)}%` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-neutral-900 dark:text-white">
+                          {formatCurrency(share.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-neutral-100/50 dark:bg-neutral-800/50 border-t-2 border-neutral-200 dark:border-neutral-700">
+                    <tr>
+                      <td className="px-4 py-3 font-bold text-neutral-900 dark:text-white" colSpan={2}>Total</td>
+                      <td className="px-4 py-3 text-right font-black text-lg text-primary">{formatCurrency(shareExpense.total_amount)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => { setIsShareModalOpen(false); setShareExpense(null); }}>Close</Button>
         </ModalFooter>
       </Modal>
     </MainLayout>
