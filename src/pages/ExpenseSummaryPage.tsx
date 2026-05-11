@@ -409,10 +409,36 @@ export function ExpenseSummaryPage() {
                         <p className="text-lg font-bold text-neutral-900 dark:text-white">
                           {formatCurrency(expense.total_amount)}
                         </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {formatCurrency(expense.total_amount / expense.member_shares.length)} / member
-                        </p>
+                        <span className={cn(
+                          "px-2 py-1 rounded text-xs font-medium capitalize",
+                          expense.share_type === "equal" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                          expense.share_type === "percentage" && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+                          expense.share_type === "manual" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                          !expense.share_type && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                        )}>
+                          {expense.share_type || "equal"}
+                        </span>
                       </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {expense.member_shares.map((share) => (
+                        <div
+                          key={share.id}
+                          className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 hover:border-yellow-200 dark:hover:border-yellow-900/50 transition-all"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-xs font-bold text-yellow-600">
+                              {share.member_name.charAt(0)}
+                            </div>
+                            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate max-w-[80px]">
+                              {share.member_name}
+                            </span>
+                          </div>
+                          <p className="font-bold text-neutral-900 dark:text-white text-sm">
+                            {formatCurrency(share.amount)}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}

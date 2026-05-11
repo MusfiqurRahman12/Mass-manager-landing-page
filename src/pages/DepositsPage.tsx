@@ -5,11 +5,9 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
-  DollarSign,
   Edit,
   Plus,
   Trash2,
-  TrendingDown,
   Users,
   Wallet,
 } from "lucide-react";
@@ -35,7 +33,7 @@ import { useForm } from "../hooks/useForm";
 import type { Deposit, Member, Meal } from "../services";
 import { cn } from "../utils";
 import { formatCurrency } from "../utils/format.utils";
-import { useDeposits, useAddDeposit, useUpdateDeposit, useDeleteDeposit } from "../hooks/queries/useExpenseQueries";
+import { useDeposits, useAddDeposit, useUpdateDeposit, useDeleteDeposit, useExpenseSummaryTotals } from "../hooks/queries/useExpenseQueries";
 import { useMembers } from "../hooks/queries/useMemberQueries";
 import { useMeals, useMealCost } from "../hooks/queries/useMealQueries";
 
@@ -69,7 +67,8 @@ export function DepositsPage() {
   const { data: members = [] as Member[], isLoading: membersLoading } = useMembers();
   const { data: mealCost, isLoading: costLoading } = useMealCost();
   const { data: mealsRaw = [] as Meal[], isLoading: mealsLoading } = useMeals();
-  const isLoading = depositsLoading || membersLoading || costLoading || mealsLoading;
+  const { data: totals, isLoading: totalsLoading } = useExpenseSummaryTotals();
+  const isLoading = depositsLoading || membersLoading || costLoading || mealsLoading || totalsLoading;
   const meals = mealsRaw.map((m) => ({ member_id: m.member_id, meal_count: m.meal_count }));
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -140,8 +139,8 @@ export function DepositsPage() {
 
 
   const currentBalance = useMemo(() => {
-    return totalDeposits - (mealCost?.total_cost || 0);
-  }, [totalDeposits, mealCost]);
+    return totalDeposits - (totals?.grand_total || 0);
+  }, [totalDeposits, totals]);
 
   // Member-wise calculations
   const memberBalances = useMemo(() => {
@@ -287,23 +286,19 @@ export function DepositsPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600">
-                  <Wallet className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {isManager ? "Total Deposits" : "My Total Deposits"}
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      formatCurrency(isManager ? totalDeposits : myTotalDeposits)
-                    )}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💵</div>
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                  {isManager ? "Total Deposits" : "My Total Deposits"}
+                </p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-20" />
+                  ) : (
+                    formatCurrency(isManager ? totalDeposits : myTotalDeposits)
+                  )}
                 </div>
               </div>
             </CardBody>
@@ -312,57 +307,47 @@ export function DepositsPage() {
           {/* Total Expenses and Current Balance — Manager only */}
           {isManager && (
             <>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600">
-                      <TrendingDown className="h-5 w-5" />
+              <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+                <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">📉</div>
+                <CardBody className="p-4 relative z-10">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                      Total Expenses
+                    </p>
+                    <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-20" />
+                      ) : (
+                        formatCurrency(totals?.grand_total || 0)
+                      )}
                     </div>
-                    <div>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Total Expenses
+                    {!isLoading && totals && (
+                      <p className="text-[10px] text-neutral-400 mt-0.5 uppercase tracking-wide">
+                        Meals: {formatCurrency(totals.meal_expenses)} • Rent: {formatCurrency(totals.home_rent)} • Utils: {formatCurrency(totals.utilities)}
                       </p>
-                      <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        {isLoading ? (
-                          <Skeleton className="h-8 w-20" />
-                        ) : (
-                          formatCurrency(mealCost?.total_cost || 0)
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </CardBody>
               </Card>
 
-              <Card>
-                <CardBody className="p-4">
-                  <div className="flex items-center gap-3">
+              <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+                <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚖️</div>
+                <CardBody className="p-4 relative z-10">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                      Current Balance
+                    </p>
                     <div
                       className={cn(
-                        "p-3 rounded-lg",
-                        currentBalance >= 0
-                          ? "bg-green-100 dark:bg-green-900/30 text-green-600"
-                          : "bg-red-100 dark:bg-red-900/30 text-red-600",
+                        "text-2xl font-bold",
+                        currentBalance >= 0 ? "text-green-600" : "text-red-600",
                       )}
                     >
-                      <DollarSign className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Current Balance
-                      </p>
-                      <div
-                        className={cn(
-                          "text-2xl font-bold",
-                          currentBalance >= 0 ? "text-green-600" : "text-red-600",
-                        )}
-                      >
-                        {isLoading ? (
-                          <Skeleton className="h-8 w-20" />
-                        ) : (
-                          formatCurrency(currentBalance)
-                        )}
-                      </div>
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-20" />
+                      ) : (
+                        formatCurrency(currentBalance)
+                      )}
                     </div>
                   </div>
                 </CardBody>
@@ -370,23 +355,19 @@ export function DepositsPage() {
             </>
           )}
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-primary">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Members
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-16" />
-                    ) : (
-                      members.length
-                    )}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">👥</div>
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                  Total Members
+                </p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    members.length
+                  )}
                 </div>
               </div>
             </CardBody>

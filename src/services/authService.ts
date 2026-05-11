@@ -11,6 +11,7 @@ export interface User {
 
 export interface AuthResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
 }
 
@@ -47,12 +48,15 @@ export const authService = {
     return registerResponse;
   },
 
-  // Login user
+  // Login user — stores both access and refresh tokens
   login: async (payload: LoginPayload): Promise<AuthResponse> => {
     const { data } = await apiClient.post<AuthResponse>("/auth/login", payload);
     if (data.access_token) {
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("tokenType", data.token_type);
+    }
+    if (data.refresh_token) {
+      localStorage.setItem("refreshToken", data.refresh_token);
     }
     return data;
   },
@@ -76,10 +80,33 @@ export const authService = {
     return data;
   },
 
-  // Logout
+  // Refresh tokens — exchanges the stored refresh token for a new token pair
+  refreshToken: async (): Promise<AuthResponse> => {
+    const storedRefreshToken = localStorage.getItem("refreshToken");
+    if (!storedRefreshToken) {
+      throw new Error("No refresh token available");
+    }
+    // Use a plain axios call (not apiClient) to avoid triggering the interceptor again
+    const { default: axios } = await import("axios");
+    const API_BASE_URL =
+      (import.meta as { env: Record<string, string> }).env.VITE_API_BASE_URL ||
+      "http://localhost:3000/api";
+    const { data } = await axios.post<AuthResponse>(
+      `${API_BASE_URL}/auth/refresh`,
+      { refresh_token: storedRefreshToken },
+      { headers: { "Content-Type": "application/json" } },
+    );
+    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("refreshToken", data.refresh_token);
+    localStorage.setItem("tokenType", data.token_type);
+    return data;
+  },
+
+  // Logout — clears all stored tokens
   logout: (): void => {
     localStorage.removeItem("token");
     localStorage.removeItem("tokenType");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
   },
 

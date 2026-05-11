@@ -56,6 +56,7 @@ export function MonthDetailsPage() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
 
+
   const getMemberMeals = (memberId: string) => {
     return meals
       .filter((m) => m.member_id === memberId)
@@ -110,7 +111,12 @@ export function MonthDetailsPage() {
     if (!month || !monthId) return;
     setIsGeneratingPDF(true);
     try {
-      await pdfService.downloadMonthPDF(monthId);
+      const blob = await pdfService.downloadMonthPDF(monthId);
+      const monthName = new Date(month.month_year).toLocaleDateString(
+        "en-US",
+        { month: "long", year: "numeric" },
+      );
+      pdfService.triggerDownload(blob, `mess_statement_${monthName}.pdf`);
       toast.success("PDF downloaded successfully");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to download PDF");
