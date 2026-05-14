@@ -105,7 +105,7 @@ export function NotificationBell() {
 
   const loadNotifications = async () => {
     try {
-      const [notifs, countData] = await Promise.all([
+      const [notifs] = await Promise.all([
         notificationService.getNotifications({ limit: 50 }), // Get more to account for filtering
         notificationService.getUnreadCount(),
       ]);
