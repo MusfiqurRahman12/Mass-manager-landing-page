@@ -609,16 +609,18 @@ export function DepositsPage() {
               </h2>
               {/* Filters */}
               <div className="flex flex-wrap gap-2">
-                <Select
-                  placeholder="Filter by member"
-                  value={filterMember}
-                  onChange={setFilterMember}
-                  options={[
-                    { value: "", label: "All Members" },
-                    ...memberOptions,
-                  ]}
-                  className="w-40"
-                />
+                {isManager && (
+                  <Select
+                    placeholder="Filter by member"
+                    value={filterMember}
+                    onChange={setFilterMember}
+                    options={[
+                      { value: "", label: "All Members" },
+                      ...memberOptions,
+                    ]}
+                    className="w-40"
+                  />
+                )}
                 <DatePicker
                   placeholder="Start date"
                   value={filterStartDate}

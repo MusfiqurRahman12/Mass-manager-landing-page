@@ -282,11 +282,11 @@ export function UtilityExpensesPage() {
       expense_date: expense.expense_date,
       description: expense.description,
     });
-    
+
     // Set member shares
     const newShares: Record<string, { amount: string; percentage: string }> = {};
     const equalPercentage = (100 / members.length).toFixed(2);
-    
+
     members.forEach(member => {
       const memberShare = expense.member_shares.find(s => s.member_id === member.user_id);
       newShares[member.user_id] = {
@@ -310,7 +310,7 @@ export function UtilityExpensesPage() {
     // Populate shares based on the imported expense
     const newShares: Record<string, { amount: string; percentage: string }> = {};
     const equalPercentage = (100 / members.length).toFixed(2);
-    
+
     members.forEach(member => {
       const memberShare = expense.member_shares.find(s => s.member_id === member.user_id);
       newShares[member.user_id] = {
@@ -478,8 +478,8 @@ export function UtilityExpensesPage() {
                 <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
                   Add Utility Expense
                 </h2>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setIsImportModalOpen(true)}
                   disabled={pastMonths.length === 0}
@@ -822,7 +822,7 @@ export function UtilityExpensesPage() {
                                       size="sm"
                                       onClick={() => handleEdit(expense)}
                                     >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -985,8 +985,8 @@ export function UtilityExpensesPage() {
           >
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={confirmDelete}
             isLoading={deleteUtilityExpense.isPending}
           >
@@ -1128,8 +1128,8 @@ export function UtilityExpensesPage() {
                 const Icon = getUtilityIcon(expense.utility_type);
                 const colorClass = getCategoryColor(expense.utility_type);
                 return (
-                  <div 
-                    key={expense.id} 
+                  <div
+                    key={expense.id}
                     className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:border-primary cursor-pointer transition-colors"
                     onClick={() => handleImportExpense(expense)}
                   >

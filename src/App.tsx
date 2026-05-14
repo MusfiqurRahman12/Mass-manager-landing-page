@@ -34,6 +34,7 @@ const RegisterPage = lazy(() => import("./pages/RegisterPage").then(m => ({ defa
 const ReportsPage = lazy(() => import("./pages/ReportsPage").then(m => ({ default: m.ReportsPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
 const TicketsPage = lazy(() => import("./pages/TicketsPage").then(m => ({ default: m.TicketsPage })));
+const MyStatementPage = lazy(() => import("./pages/MyStatementPage").then(m => ({ default: m.MyStatementPage })));
 const UtilityExpensesPage = lazy(() => import("./pages/UtilityExpensesPage").then(m => ({ default: m.UtilityExpensesPage })));
 
 // Lazy-loaded admin pages
@@ -106,7 +107,8 @@ function App() {
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/months/:monthId" element={<ProtectedRoute><MonthDetailsPage /></ProtectedRoute>} />
-            <Route path="/support" element={<ProtectedRoute><TicketsPage /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute requireManager><TicketsPage /></ProtectedRoute>} />
+            <Route path="/my-statement" element={<ProtectedRoute requireManager><MyStatementPage /></ProtectedRoute>} />
 
             {/* ── Admin Routes (/admin/*) ────────────────────────── */}
             <Route path="/admin/login" element={<AdminLoginPage />} />

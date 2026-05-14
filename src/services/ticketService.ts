@@ -33,22 +33,22 @@ export interface TicketCreate {
 
 export const ticketService = {
   getTickets: async (): Promise<TicketOut[]> => {
-    const res = await apiClient.get("/api/v1/tickets");
+    const res = await apiClient.get("/tickets");
     return res.data;
   },
   
   getTicketDetail: async (id: string): Promise<TicketDetail> => {
-    const res = await apiClient.get(`/api/v1/tickets/${id}`);
+    const res = await apiClient.get(`/tickets/${id}`);
     return res.data;
   },
 
   createTicket: async (data: TicketCreate): Promise<TicketOut> => {
-    const res = await apiClient.post("/api/v1/tickets", data);
+    const res = await apiClient.post("/tickets", data);
     return res.data;
   },
 
   addReply: async (ticketId: string, body: string): Promise<TicketReply> => {
-    const res = await apiClient.post(`/api/v1/tickets/${ticketId}/replies`, { body });
+    const res = await apiClient.post(`/tickets/${ticketId}/replies`, { body });
     return res.data;
   },
 };

@@ -481,7 +481,14 @@ export function MealsPage() {
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">Meal Records</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">Meal Records</h2>
+                {!isLoading && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                    {filteredMeals.length}
+                  </span>
+                )}
+              </div>
               {/* Filters */}
               <div className="flex flex-wrap gap-2">
                 {isManager && (

@@ -7,6 +7,10 @@ import { useRequireAuth } from "../hooks";
 import { pdfService } from "../services/pdfService";
 import { type Member } from "../services/memberService";
 import { formatCurrency } from "../utils/format.utils";
+import {
+  TrendingDown, TrendingUp, Utensils, Home, Zap,
+  Wallet, CircleDollarSign, Calculator, CalendarDays,
+} from "lucide-react";
 
 import { useMonthDetails } from "../hooks/queries/useMonthQueries";
 import { useMembers } from "../hooks/queries/useMemberQueries";
@@ -217,36 +221,45 @@ export function MonthDetailsPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card className="p-6">
-            <p className="text-sm text-neutral-500 mb-1">Total Meals</p>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{month.total_meal}</p>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-primary opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+            <div className="p-6 relative z-10">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Total Meals</p>
+              <p className="text-2xl font-bold text-neutral-900 dark:text-white">{month.total_meal}</p>
+            </div>
           </Card>
-          <Card className="p-6">
-            <p className="text-sm text-neutral-500 mb-1">Meal Rate</p>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-              {formatCurrency(month.meal_rate)}
-            </p>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <CalendarDays className="absolute -right-4 -bottom-4 h-24 w-24 text-purple-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+            <div className="p-6 relative z-10">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Meal Rate</p>
+              <p className="text-2xl font-bold text-neutral-900 dark:text-white">{formatCurrency(month.meal_rate)}</p>
+            </div>
           </Card>
-          <Card className="p-6">
-            <p className="text-sm text-neutral-500 mb-1">Total Meal Cost</p>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-              {formatCurrency(month.total_cost)}
-            </p>
-          </Card>
-          <Card className="p-6">
-            <p className="text-sm text-neutral-500 mb-1">Closing Balance</p>
-            <p
-              className={`text-2xl font-bold ${
-                month.closing_balance >= 0 ? "text-success" : "text-error"
-              }`}
-            >
-              {formatCurrency(month.closing_balance)}
-            </p>
-          </Card>
+          {isManager && (
+            <>
+              <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+                <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-green-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+                <div className="p-6 relative z-10">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Total Meal Cost</p>
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">{formatCurrency(month.total_cost)}</p>
+                </div>
+              </Card>
+              <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+                <CircleDollarSign className="absolute -right-4 -bottom-4 h-24 w-24 text-orange-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+                <div className="p-6 relative z-10">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">Closing Balance</p>
+                  <p className={`text-2xl font-bold ${month.closing_balance >= 0 ? "text-success" : "text-error"}`}>
+                    {formatCurrency(month.closing_balance)}
+                  </p>
+                </div>
+              </Card>
+            </>
+          )}
         </div>
 
-        {/* Member Summary */}
-        <Card className="overflow-hidden">
+        {/* Member Summary — manager sees full table, member sees personal statement */}
+        {isManager ? (
+          <Card className="overflow-hidden">
           <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Member Summary</h2>
           </div>
@@ -348,9 +361,151 @@ export function MonthDetailsPage() {
             </table>
           </div>
         </Card>
+        ) : (
+          /* Member Personal Statement */
+          memberSummaries[0] && (
+            <div className="space-y-4">
+              {/* Hero Banner */}
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/70 p-6 text-white shadow-lg shadow-primary/20">
+                <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10" />
+                <div className="absolute -bottom-8 -left-4 h-24 w-24 rounded-full bg-white/5" />
+                <div className="relative z-10">
+                  <p className="text-sm font-medium text-white/80 mb-1">My Statement &mdash;&nbsp;<span className="font-bold">{getMonthName(month.month_year)}</span></p>
+                  <h2 className="text-2xl font-black tracking-tight">{memberSummaries[0].member.full_name}</h2>
+                  <div className="mt-4 flex items-end gap-2">
+                    <span className="text-4xl font-black">{formatCurrency(Math.abs(memberSummaries[0].balance))}</span>
+                    <span className={`mb-1 text-sm font-semibold px-2.5 py-0.5 rounded-full ${memberSummaries[0].balance >= 0 ? "bg-green-400/20 text-green-100" : "bg-red-400/20 text-red-100"}`}>
+                      {memberSummaries[0].balance >= 0 ? "✓ Surplus" : "⚠ Due"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-white/70">Net balance after all deductions</p>
+                </div>
+              </div>
 
-        {/* Settlement Summary */}
-        <Card className="overflow-hidden">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <Card className="relative overflow-hidden border border-neutral-200/60 dark:border-neutral-800/60">
+                  <Utensils className="absolute -right-3 -bottom-3 h-16 w-16 text-orange-500 opacity-5" />
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/30"><Utensils className="h-3.5 w-3.5 text-orange-600" /></div>
+                      <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Meals</span>
+                    </div>
+                    <p className="text-xl font-black text-neutral-900 dark:text-white">{memberSummaries[0].totalMeals}</p>
+                    <p className="text-xs text-neutral-400 mt-0.5">{formatCurrency(memberSummaries[0].mealCost)} cost</p>
+                  </div>
+                </Card>
+                <Card className="relative overflow-hidden border border-neutral-200/60 dark:border-neutral-800/60">
+                  <Home className="absolute -right-3 -bottom-3 h-16 w-16 text-blue-500 opacity-5" />
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30"><Home className="h-3.5 w-3.5 text-blue-600" /></div>
+                      <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Rent Share</span>
+                    </div>
+                    <p className="text-xl font-black text-neutral-900 dark:text-white">{formatCurrency(memberSummaries[0].homeRentShare)}</p>
+                    <p className="text-xs text-neutral-400 mt-0.5">My portion</p>
+                  </div>
+                </Card>
+                <Card className="relative overflow-hidden border border-neutral-200/60 dark:border-neutral-800/60">
+                  <Zap className="absolute -right-3 -bottom-3 h-16 w-16 text-yellow-500 opacity-5" />
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-900/30"><Zap className="h-3.5 w-3.5 text-yellow-600" /></div>
+                      <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Utilities</span>
+                    </div>
+                    <p className="text-xl font-black text-neutral-900 dark:text-white">{formatCurrency(memberSummaries[0].utilityShare)}</p>
+                    <p className="text-xs text-neutral-400 mt-0.5">My portion</p>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Financial Summary Card */}
+              <Card className="border border-neutral-200/60 dark:border-neutral-800/60">
+                <div className="p-5 border-b border-neutral-100 dark:border-neutral-800">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-5 w-5 text-primary" />
+                    <h3 className="font-bold text-neutral-900 dark:text-white">My Financial Summary</h3>
+                  </div>
+                </div>
+                <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  <div className="flex items-center justify-between px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30"><Utensils className="h-4 w-4 text-orange-600" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-white">Meal Cost</p>
+                        <p className="text-xs text-neutral-400">{memberSummaries[0].totalMeals} meals × {formatCurrency(mealSummary?.meal_rate || 0)}</p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-neutral-900 dark:text-white">{formatCurrency(memberSummaries[0].mealCost)}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30"><Home className="h-4 w-4 text-blue-600" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-white">Home Rent Share</p>
+                        <p className="text-xs text-neutral-400">Equal split</p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-neutral-900 dark:text-white">{formatCurrency(memberSummaries[0].homeRentShare)}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30"><Zap className="h-4 w-4 text-yellow-600" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-white">Utility Share</p>
+                        <p className="text-xs text-neutral-400">Equal split</p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-neutral-900 dark:text-white">{formatCurrency(memberSummaries[0].utilityShare)}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-5 py-3.5 bg-neutral-50 dark:bg-neutral-800/40">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-neutral-200 dark:bg-neutral-700"><CircleDollarSign className="h-4 w-4 text-neutral-600 dark:text-neutral-400" /></div>
+                      <p className="text-sm font-bold text-neutral-900 dark:text-white">Total Expenses</p>
+                    </div>
+                    <span className="font-black text-lg text-neutral-900 dark:text-white">
+                      {formatCurrency(memberSummaries[0].mealCost + memberSummaries[0].homeRentShare + memberSummaries[0].utilityShare)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30"><Wallet className="h-4 w-4 text-green-600" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-white">My Deposits</p>
+                        <p className="text-xs text-neutral-400">Total paid in</p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-green-600">{formatCurrency(memberSummaries[0].totalDeposits)}</span>
+                  </div>
+                  <div className={`flex items-center justify-between px-5 py-4 rounded-b-xl ${memberSummaries[0].balance >= 0 ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${memberSummaries[0].balance >= 0 ? "bg-green-200 dark:bg-green-800" : "bg-red-200 dark:bg-red-800"}`}>
+                        {memberSummaries[0].balance >= 0
+                          ? <TrendingUp className="h-4 w-4 text-green-700 dark:text-green-300" />
+                          : <TrendingDown className="h-4 w-4 text-red-700 dark:text-red-300" />}
+                      </div>
+                      <div>
+                        <p className={`text-sm font-bold ${memberSummaries[0].balance >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
+                          {memberSummaries[0].balance >= 0 ? "You have a surplus" : "Amount due"}
+                        </p>
+                        <p className="text-xs text-neutral-400">
+                          {memberSummaries[0].balance >= 0 ? "Your deposits exceed your expenses" : "Your expenses exceed your deposits"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`text-xl font-black ${memberSummaries[0].balance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {formatCurrency(Math.abs(memberSummaries[0].balance))}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )
+        )}
+
+        {/* Settlement Summary — Manager only */}
+        {isManager && (
+          <Card className="overflow-hidden">
           <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Settlement Summary</h2>
           </div>
@@ -504,6 +659,7 @@ export function MonthDetailsPage() {
             </div>
           </div>
         </Card>
+        )}
 
         {/* Expense Breakdown — Manager only */}
         {isManager && (
