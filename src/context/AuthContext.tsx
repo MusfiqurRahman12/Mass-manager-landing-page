@@ -9,6 +9,7 @@ import { authService, type User } from "../services";
 import { messService } from "../services/messService";
 import { setGlobalCurrency } from "../utils/format.utils";
 import { requestAndRegisterPushToken, unregisterPushToken } from "../lib/pushNotifications";
+import { queryClient } from "../lib/queryClient";
 
 interface AuthContextType {
   user: User | null;
@@ -84,6 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
+    // Clear any cached data from a previous user before fetching new user's data
+    queryClient.clear();
     try {
       await authService.login({ email, password });
       const userInfo = await authService.getCurrentUserInfo();
@@ -165,6 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     unregisterPushToken(); // best-effort token cleanup
     authService.logout();
     setUser(null);
+    // Wipe all cached query data so the next user always gets fresh data from the server
+    queryClient.clear();
   };
 
   return (

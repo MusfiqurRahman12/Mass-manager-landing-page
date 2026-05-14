@@ -223,8 +223,8 @@ export function MembersPage() {
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-          <Button onClick={handleAddMember} isLoading={addMember.isPending || createAndAddMember.isPending}>
+          <Button size="sm" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleAddMember} isLoading={addMember.isPending || createAndAddMember.isPending}>
             {activeTab === "existing" ? "Add Member" : "Create & Add Member"}
           </Button>
         </ModalFooter>
@@ -266,19 +266,19 @@ export function MembersPage() {
               {isManager && selectedMember.user_id !== user?.id && (
                 <>
                   {selectedMember.is_active && (
-                    <Button variant="outline" className="text-warning border-warning hover:bg-warning/10" onClick={() => setShowTransferModal(true)}>
+                    <Button size="sm" variant="outline" className="text-warning border-warning hover:bg-warning/10" onClick={() => setShowTransferModal(true)}>
                       Make Manager
                     </Button>
                   )}
-                  <Button variant="outline" onClick={handleToggleStatus} isLoading={updateMemberStatus.isPending}>
+                  <Button size="sm" variant="outline" onClick={handleToggleStatus} isLoading={updateMemberStatus.isPending}>
                     {selectedMember.is_active ? "Deactivate" : "Activate"}
                   </Button>
-                  <Button variant="danger" onClick={() => { setShowDetailsModal(false); setMemberToRemove(selectedMember); setShowRemoveConfirm(true); }}>
+                  <Button size="sm" variant="danger" onClick={() => { setShowDetailsModal(false); setMemberToRemove(selectedMember); setShowRemoveConfirm(true); }}>
                     Remove
                   </Button>
                 </>
               )}
-              <Button variant="outline" onClick={() => { setShowDetailsModal(false); setSelectedMember(null); }}>Close</Button>
+              <Button size="sm" variant="outline" onClick={() => { setShowDetailsModal(false); setSelectedMember(null); }}>Close</Button>
             </ModalFooter>
           </>
         )}
@@ -301,8 +301,8 @@ export function MembersPage() {
               </div>
             </ModalBody>
             <ModalFooter>
-              <Button variant="outline" onClick={() => setShowTransferModal(false)}>Cancel</Button>
-              <Button onClick={() => transferMutation.mutate(selectedMember.user_id)} isLoading={transferMutation.isPending}>Send Request</Button>
+              <Button size="sm" variant="outline" onClick={() => setShowTransferModal(false)}>Cancel</Button>
+              <Button size="sm" onClick={() => transferMutation.mutate(selectedMember.user_id)} isLoading={transferMutation.isPending}>Send Request</Button>
             </ModalFooter>
           </>
         )}
@@ -316,8 +316,8 @@ export function MembersPage() {
               <p>Are you sure you want to remove <strong>{memberToRemove.full_name}</strong> from the mess? This action cannot be undone.</p>
             </ModalBody>
             <ModalFooter>
-              <Button variant="outline" onClick={() => { setShowRemoveConfirm(false); setMemberToRemove(null); }} disabled={removeMember.isPending}>Cancel</Button>
-              <Button variant="danger" onClick={handleRemoveMember} isLoading={removeMember.isPending} disabled={removeMember.isPending}>Remove</Button>
+              <Button size="sm" variant="outline" onClick={() => { setShowRemoveConfirm(false); setMemberToRemove(null); }} disabled={removeMember.isPending}>Cancel</Button>
+              <Button size="sm" variant="danger" onClick={handleRemoveMember} isLoading={removeMember.isPending} disabled={removeMember.isPending}>Remove</Button>
             </ModalFooter>
           </>
         )}

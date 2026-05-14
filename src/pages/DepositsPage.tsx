@@ -33,7 +33,7 @@ import { useForm } from "../hooks/useForm";
 import type { Deposit, Member, Meal } from "../services";
 import { cn } from "../utils";
 import { formatCurrency } from "../utils/format.utils";
-import { useDeposits, useAddDeposit, useUpdateDeposit, useDeleteDeposit, useExpenseSummaryTotals } from "../hooks/queries/useExpenseQueries";
+import { useDeposits, useAddDeposit, useUpdateDeposit, useDeleteDeposit, useExpenseSummaryTotals, useExpenseSummaryByMembers } from "../hooks/queries/useExpenseQueries";
 import { useMembers } from "../hooks/queries/useMemberQueries";
 import { useMeals, useMealCost } from "../hooks/queries/useMealQueries";
 
@@ -68,7 +68,8 @@ export function DepositsPage() {
   const { data: mealCost, isLoading: costLoading } = useMealCost();
   const { data: mealsRaw = [] as Meal[], isLoading: mealsLoading } = useMeals();
   const { data: totals, isLoading: totalsLoading } = useExpenseSummaryTotals();
-  const isLoading = depositsLoading || membersLoading || costLoading || mealsLoading || totalsLoading;
+  const { data: expenseSummary, isLoading: expenseSummaryLoading } = useExpenseSummaryByMembers();
+  const isLoading = depositsLoading || membersLoading || costLoading || mealsLoading || totalsLoading || expenseSummaryLoading;
   const meals = mealsRaw.map((m) => ({ member_id: m.member_id, meal_count: m.meal_count }));
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -144,6 +145,8 @@ export function DepositsPage() {
 
   // Member-wise calculations
   const memberBalances = useMemo(() => {
+    const memberSummaries = expenseSummary?.member_summaries || [];
+
     const balances: Record<
       string,
       {
@@ -151,17 +154,24 @@ export function DepositsPage() {
         totalDeposits: number;
         totalMeals: number;
         mealCost: number;
+        homeRentShare: number;
+        utilityShare: number;
+        totalExpenses: number;
         dueAmount: number;
       }
     > = {};
 
     // Initialize with all members
     members.forEach((member) => {
+      const expSummary = memberSummaries.find((s) => s.member_id === member.user_id);
       balances[member.user_id] = {
         member,
         totalDeposits: 0,
         totalMeals: 0,
         mealCost: 0,
+        homeRentShare: expSummary?.home_rent_share || 0,
+        utilityShare: expSummary?.utility_share || 0,
+        totalExpenses: 0,
         dueAmount: 0,
       };
     });
@@ -182,14 +192,16 @@ export function DepositsPage() {
       }
     });
 
-    // Calculate due amount (positive = owes money, negative = has credit)
+    // Calculate total expenses and due amount
+    // dueAmount > 0 = owes money, dueAmount < 0 = has credit
     Object.keys(balances).forEach((memberId) => {
-      const balance = balances[memberId];
-      balance.dueAmount = balance.mealCost - balance.totalDeposits;
+      const b = balances[memberId];
+      b.totalExpenses = b.mealCost + b.homeRentShare + b.utilityShare;
+      b.dueAmount = b.totalExpenses - b.totalDeposits;
     });
 
     return Object.values(balances).sort((a, b) => b.dueAmount - a.dueAmount);
-  }, [members, deposits, meals, mealCost]);
+  }, [members, deposits, meals, mealCost, expenseSummary]);
 
   const depositForm = useForm<DepositFormValues>({
     initialValues: {
