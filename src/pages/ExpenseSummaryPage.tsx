@@ -48,89 +48,73 @@ export function ExpenseSummaryPage() {
 
         {/* Total Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600">
-                  <Utensils className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Meal Expenses
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      formatCurrency(totals?.meal_expenses || 0)
-                    )}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-green-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                  Meal Expenses
+                </p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-20" />
+                  ) : (
+                    formatCurrency(totals?.meal_expenses || 0)
+                  )}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-primary">
-                  <Home className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Home Rent
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      formatCurrency(totals?.home_rent || 0)
-                    )}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <Home className="absolute -right-4 -bottom-4 h-24 w-24 text-primary opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                  Home Rent
+                </p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-20" />
+                  ) : (
+                    formatCurrency(totals?.home_rent || 0)
+                  )}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600">
-                  <Zap className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Utilities
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      formatCurrency(totals?.utilities || 0)
-                    )}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <Zap className="absolute -right-4 -bottom-4 h-24 w-24 text-yellow-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                  Utilities
+                </p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-20" />
+                  ) : (
+                    formatCurrency(totals?.utilities || 0)
+                  )}
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Grand Total
-                  </p>
-                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-24" />
-                    ) : (
-                      formatCurrency(totals?.grand_total || 0)
-                    )}
-                  </div>
+          <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+            <DollarSign className="absolute -right-4 -bottom-4 h-24 w-24 text-purple-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+            <CardBody className="p-4 relative z-10">
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                  Grand Total
+                </p>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-24" />
+                  ) : (
+                    formatCurrency(totals?.grand_total || 0)
+                  )}
                 </div>
               </div>
             </CardBody>

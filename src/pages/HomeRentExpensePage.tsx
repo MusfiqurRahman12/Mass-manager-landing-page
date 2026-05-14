@@ -88,7 +88,7 @@ export function HomeRentExpensePage() {
   const { data: monthHistory = [] } = useMonthHistory(5, 0);
   const pastMonths = monthHistory.filter(m => !m.is_active);
   const previousMonthId = pastMonths.length > 0 ? pastMonths[0].id : undefined;
-  
+
   // We unconditionally call the hook. React Query handles the disabled/enabled internally, 
   // or we can just fetch if we have a previousMonthId
   const { data: previousMonthExpenses = [], isLoading: previousMonthLoading } = useHomeRentExpenses(previousMonthId);
@@ -207,11 +207,11 @@ export function HomeRentExpensePage() {
       expense_date: expense.expense_date,
       description: expense.description || "",
     });
-    
+
     // Set member shares
     const newShares: Record<string, { amount: string; percentage: string }> = {};
     const equalPercentage = (100 / members.length).toFixed(2);
-    
+
     members.forEach(member => {
       const memberShare = expense.member_shares.find(s => s.member_id === member.user_id);
       newShares[member.user_id] = {
@@ -234,7 +234,7 @@ export function HomeRentExpensePage() {
     // Populate shares based on the imported expense
     const newShares: Record<string, { amount: string; percentage: string }> = {};
     const equalPercentage = (100 / members.length).toFixed(2);
-    
+
     members.forEach(member => {
       const memberShare = expense.member_shares.find(s => s.member_id === member.user_id);
       newShares[member.user_id] = {
@@ -334,57 +334,45 @@ export function HomeRentExpensePage() {
         {/* Summary Cards */}
         {!isLoading && rentExpenses.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-none shadow-sm bg-gradient-to-br from-blue-500/10 to-transparent dark:from-blue-500/5">
-              <CardBody className="p-5">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 shadow-sm shadow-blue-500/20">
-                    <Home className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Total Rent
-                    </p>
-                    <div className="text-2xl font-black text-neutral-900 dark:text-white">
-                      {formatCurrency(
-                        rentExpenses.reduce((sum, e) => sum + e.total_amount, 0)
-                      )}
-                    </div>
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Home className="absolute -right-4 -bottom-4 h-24 w-24 text-blue-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-5 relative z-10">
+                <div>
+                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
+                    Total Rent
+                  </p>
+                  <div className="text-2xl font-black text-neutral-900 dark:text-white">
+                    {formatCurrency(
+                      rentExpenses.reduce((sum, e) => sum + e.total_amount, 0)
+                    )}
                   </div>
                 </div>
               </CardBody>
             </Card>
 
-            <Card className="border-none shadow-sm bg-gradient-to-br from-green-500/10 to-transparent dark:from-green-500/5">
-              <CardBody className="p-5">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-green-100 dark:bg-green-900/30 text-green-600 shadow-sm shadow-green-500/20">
-                    <Users className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Active Members
-                    </p>
-                    <div className="text-2xl font-black text-neutral-900 dark:text-white">
-                      {members.length}
-                    </div>
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Users className="absolute -right-4 -bottom-4 h-24 w-24 text-green-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-5 relative z-10">
+                <div>
+                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
+                    Active Members
+                  </p>
+                  <div className="text-2xl font-black text-neutral-900 dark:text-white">
+                    {members.length}
                   </div>
                 </div>
               </CardBody>
             </Card>
 
-            <Card className="border-none shadow-sm bg-gradient-to-br from-purple-500/10 to-transparent dark:from-purple-500/5">
-              <CardBody className="p-5">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 shadow-sm shadow-purple-500/20">
-                    <Calculator className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Rent Entries
-                    </p>
-                    <div className="text-2xl font-black text-neutral-900 dark:text-white">
-                      {rentExpenses.length}
-                    </div>
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Calculator className="absolute -right-4 -bottom-4 h-24 w-24 text-purple-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-5 relative z-10">
+                <div>
+                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
+                    Rent Entries
+                  </p>
+                  <div className="text-2xl font-black text-neutral-900 dark:text-white">
+                    {rentExpenses.length}
                   </div>
                 </div>
               </CardBody>
@@ -401,8 +389,8 @@ export function HomeRentExpensePage() {
                 <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
                   Add Home Rent
                 </h2>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setIsImportModalOpen(true)}
                   disabled={pastMonths.length === 0}
@@ -503,14 +491,14 @@ export function HomeRentExpensePage() {
                           </>
                         )}
                       </h3>
-                      
+
                       <div className={cn(
                         "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
-                        rentForm.values.share_type === "percentage" 
+                        rentForm.values.share_type === "percentage"
                           ? (Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.percentage || "0"), 0) === 100 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")
                           : (Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0) === parseFloat(rentForm.values.total_amount || "0") ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")
                       )}>
-                        {rentForm.values.share_type === "percentage" 
+                        {rentForm.values.share_type === "percentage"
                           ? `Total: ${Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.percentage || "0"), 0).toFixed(1)}% / 100%`
                           : `Total: ${formatCurrency(Object.values(memberShares).reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0))} / ${formatCurrency(parseFloat(rentForm.values.total_amount || "0"))}`
                         }
@@ -519,7 +507,7 @@ export function HomeRentExpensePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {members.map((member) => (
-                        <div 
+                        <div
                           key={member.user_id}
                           className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 shadow-sm transition-all hover:shadow-md"
                         >
@@ -692,7 +680,7 @@ export function HomeRentExpensePage() {
                                     size="sm"
                                     onClick={() => handleEdit(expense)}
                                   >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -855,8 +843,8 @@ export function HomeRentExpensePage() {
           >
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={confirmDelete}
             isLoading={deleteHomeRent.isPending}
           >
@@ -981,8 +969,8 @@ export function HomeRentExpensePage() {
           ) : (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {previousMonthExpenses.map((expense) => (
-                <div 
-                  key={expense.id} 
+                <div
+                  key={expense.id}
                   className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:border-primary cursor-pointer transition-colors"
                   onClick={() => handleImportExpense(expense)}
                 >

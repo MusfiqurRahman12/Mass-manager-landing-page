@@ -66,7 +66,7 @@ export function SettingsPage() {
 
   // Notification settings
   const [notifications, setNotifications] = useState<NotificationSettings>({
-    meal_updates: true,
+    meal_updates: false,
     expense_updates: true,
     deposit_updates: true,
     manager_transfer: true,
@@ -468,11 +468,11 @@ export function SettingsPage() {
 
           <div className="space-y-4">
             {[
-              {
+              /* {
                 key: "meal_updates",
                 label: "Meal Updates",
                 description: "When meals are added or updated",
-              },
+              }, */
               {
                 key: "expense_updates",
                 label: "Expense Updates",

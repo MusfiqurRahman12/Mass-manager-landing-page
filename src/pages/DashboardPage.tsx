@@ -13,7 +13,7 @@ import { MainLayout } from "../components/layout";
 import { useAuth } from "../context";
 import { formatCurrency } from "../utils";
 import { useActiveMonth, useStartNewMonth } from "../hooks/queries/useMonthQueries";
-import { useMealCost } from "../hooks/queries/useMealQueries";
+import { useMealCost, useMeals } from "../hooks/queries/useMealQueries";
 import { useExpenseSummaryByMembers, useDeposits, useExpenseSummaryTotals } from "../hooks/queries/useExpenseQueries";
 
 export function DashboardPage() {
@@ -31,7 +31,7 @@ export function DashboardPage() {
 
   // Conditional queries — only fetch when we have a month
   const { data: depositsData, isLoading: depositsLoading } = useDeposits(
-    isManager && activeMonth?.id ? { month_id: activeMonth.id } : undefined
+    activeMonth?.id ? { month_id: activeMonth.id } : undefined
   );
   const { data: summaryData, isLoading: summaryLoading } = useExpenseSummaryByMembers(
     !isManager && activeMonth?.id ? activeMonth.id : undefined
@@ -39,15 +39,29 @@ export function DashboardPage() {
   const { data: summaryTotals, isLoading: summaryTotalsLoading } = useExpenseSummaryTotals(
     isManager && activeMonth?.id ? activeMonth.id : undefined
   );
+  const { data: mealsData, isLoading: mealsLoading } = useMeals(
+    !isManager && activeMonth?.id ? { month_id: activeMonth.id, member_id: user?.id } : undefined
+  );
 
   const totalDeposits = depositsData?.reduce((sum, d) => sum + d.amount, 0) ?? 0;
   const memberSummary = summaryData?.member_summaries?.[0] ?? null;
 
+  // Manager calculations
   const mealExpenses = summaryTotals?.meal_expenses ?? 0;
   const homeRent = summaryTotals?.home_rent ?? 0;
   const utilities = summaryTotals?.utilities ?? 0;
   const grandTotal = summaryTotals?.grand_total ?? 0;
   const currentBalance = totalDeposits - grandTotal;
+
+  // Member calculations
+  const myTotalDeposits = totalDeposits;
+  const myTotalMealsCount = mealsData?.reduce((sum, m) => sum + m.meal_count, 0) ?? 0;
+  const currentMealRate = activeMonth?.meal_rate ?? mealCost?.meal_rate ?? 0;
+  const myMealExpenses = myTotalMealsCount * currentMealRate;
+  const myHomeRent = memberSummary?.home_rent_share ?? 0;
+  const myUtilities = memberSummary?.utility_share ?? 0;
+  const myGrandTotal = memberSummary?.total_share ?? 0;
+  const myCurrentBalance = myTotalDeposits - (myMealExpenses + myHomeRent + myUtilities);
 
   // ── Mutation ──────────────────────────────────────────────────────────────
   const startNewMonthMutation = useStartNewMonth();
@@ -189,48 +203,72 @@ export function DashboardPage() {
             </Card>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">💵</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Deposits</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {depositsLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(myTotalDeposits)}
+                </h3>
+                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">This Month</Badge>
+              </div>
+            </Card>
+
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🍽️</div>
               <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Meals (Est.)</p>
-                <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 truncate">
-                  {costLoading ? <Skeleton className="h-8 w-32" /> : (mealCost?.meal_rate ? "Rate: " + formatCurrency(mealCost.meal_rate) : "0")}
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Meal Expenses</p>
+                <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
+                  {mealsLoading || costLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(myMealExpenses)}
                 </h3>
-                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">Current Month</Badge>
+                <Badge variant="primary" size="sm" className="bg-primary/10 text-primary border-primary/20">{myTotalMealsCount} Meals</Badge>
               </div>
             </Card>
 
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🏠</div>
               <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Rent Share</p>
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Home Rent</p>
                 <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
-                  {summaryLoading ? <Skeleton className="h-9 w-24" /> : formatCurrency(memberSummary?.home_rent_share ?? 0)}
+                  {summaryLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(myHomeRent)}
                 </h3>
-                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Home Rent</Badge>
+                <Badge variant="warning" size="sm" className="bg-warning/10 text-warning border-warning/20">Rent Share</Badge>
               </div>
             </Card>
 
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
               <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚡</div>
               <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Utility Share</p>
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Utilities</p>
                 <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
-                  {summaryLoading ? <Skeleton className="h-9 w-24" /> : formatCurrency(memberSummary?.utility_share ?? 0)}
+                  {summaryLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(myUtilities)}
                 </h3>
-                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">Utilities</Badge>
+                <Badge variant="success" size="sm" className="bg-success/10 text-success border-success/20">Utility Share</Badge>
               </div>
             </Card>
 
             <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
-              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">🧾</div>
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">∑</div>
               <div className="relative z-10">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Total Due Share</p>
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">Grand Total</p>
                 <h3 className="text-3xl font-bold text-neutral-900 dark:text-white mb-3">
-                  {summaryLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(memberSummary?.total_share ?? 0)}
+                  {summaryLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(myGrandTotal)}
                 </h3>
-                <Badge variant="default" size="sm">Rent + Utility</Badge>
+                <Badge variant="default" size="sm" className="bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">Rent + Utility</Badge>
+              </div>
+            </Card>
+
+            <Card className="p-6 relative overflow-hidden group hover:shadow-md transition-shadow border border-neutral-200/60 dark:border-neutral-800/60">
+              <div className="absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">⚖️</div>
+              <div className="relative z-10">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">My Current Balance</p>
+                <h3 className={`text-3xl font-bold mb-3 ${myCurrentBalance < 0 ? 'text-red-500' : 'text-green-500 dark:text-green-400'}`}>
+                  {depositsLoading || mealsLoading || summaryLoading || costLoading ? <Skeleton className="h-9 w-28" /> : formatCurrency(myCurrentBalance)}
+                </h3>
+                <Badge variant={myCurrentBalance < 0 ? "error" : "success"} size="sm">
+                  {myCurrentBalance < 0 ? "Deficit" : "Surplus"}
+                </Badge>
               </div>
             </Card>
           </div>

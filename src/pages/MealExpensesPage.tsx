@@ -38,6 +38,8 @@ import { expenseApi } from "../services";
 import { formatCurrency } from "../utils/format.utils";
 import { useMealExpenses, useAddMealExpense, useUpdateMealExpense, useDeleteMealExpense } from "../hooks/queries/useExpenseQueries";
 import { useMembers } from "../hooks/queries/useMemberQueries";
+import { useMeals } from "../hooks/queries/useMealQueries";
+import { useActiveMonth } from "../hooks/queries/useMonthQueries";
 import { useQueryClient } from "@tanstack/react-query";
 
 
@@ -68,8 +70,19 @@ export function MealExpensesPage() {
   const [spentByFilter, setSpentByFilter] = useState<string>("");
 
   // ── Data Queries ──────────────────────────────────────────────────────────
-  const { data: mealData, isLoading } = useMealExpenses();
+  const { data: activeMonth } = useActiveMonth();
+  const { data: mealData, isLoading: expensesLoading } = useMealExpenses();
   const { data: members = [] as Member[] } = useMembers();
+  const { data: mealsData, isLoading: mealsLoading } = useMeals(
+    !isManager && activeMonth?.id ? { month_id: activeMonth.id, member_id: user?.id } : undefined
+  );
+
+  const isLoading = expensesLoading || mealsLoading;
+
+  const myMealCount = mealsData?.reduce((sum, m) => sum + m.meal_count, 0) ?? 0;
+  const mealRate = mealData?.meal_rate || 0;
+  const myMealExpenses = myMealCount * mealRate;
+  const totalMealExpensesAll = mealData?.total_meal_expenses || 0;
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const addMealExpense = useAddMealExpense();
@@ -79,7 +92,7 @@ export function MealExpensesPage() {
 
 
   const expenses = mealData?.expenses || [];
-  
+
   const filteredExpenses = spentByFilter
     ? expenses.filter(e => e.created_by === spentByFilter)
     : expenses;
@@ -215,15 +228,14 @@ export function MealExpensesPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600">
-                  <Utensils className="h-5 w-5" />
-                </div>
+        {/* Summary Cards */}
+        {isManager ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-green-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-4 relative z-10">
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
                     Total Meal Expenses
                   </p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -234,18 +246,14 @@ export function MealExpensesPage() {
                     )}
                   </div>
                 </div>
-              </div>
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-primary">
-                  <Utensils className="h-5 w-5" />
-                </div>
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-primary opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-4 relative z-10">
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
                     Total Meals
                   </p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -256,18 +264,14 @@ export function MealExpensesPage() {
                     )}
                   </div>
                 </div>
-              </div>
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
 
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600">
-                  <Calendar className="h-5 w-5" />
-                </div>
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Calendar className="absolute -right-4 -bottom-4 h-24 w-24 text-purple-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-4 relative z-10">
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
                     Meal Rate
                   </p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -278,32 +282,89 @@ export function MealExpensesPage() {
                     )}
                   </div>
                 </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600">
-                  <Calendar className="h-5 w-5" />
-                </div>
+              </CardBody>
+            </Card>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-green-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-4 relative z-10">
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Expense Count
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                    My Meal Expenses
+                  </p>
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      formatCurrency(myMealExpenses)
+                    )}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-primary opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-4 relative z-10">
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                    My Meal
                   </p>
                   <div className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {isLoading ? (
                       <Skeleton className="h-8 w-16" />
                     ) : (
-                      expenses.length
+                      myMealCount
                     )}
                   </div>
                 </div>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+              </CardBody>
+            </Card>
+
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Calendar className="absolute -right-4 -bottom-4 h-24 w-24 text-purple-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-4 relative z-10">
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                    Meal Rate
+                  </p>
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      formatCurrency(mealRate)
+                    )}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card className="relative overflow-hidden group border border-neutral-200/60 dark:border-neutral-800/60 hover:shadow-md transition-shadow">
+              <Utensils className="absolute -right-4 -bottom-4 h-24 w-24 text-orange-600 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110" />
+              <CardBody className="p-4 relative z-10 flex flex-col justify-between h-full">
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                    Total Expenses
+                  </p>
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      formatCurrency(totalMealExpensesAll)
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 pt-1.5 border-t border-neutral-100 dark:border-neutral-800 text-center">
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
+                    All Member
+                  </span>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
 
         {/* Add Expense Form */}
         <Card className="border-primary/20 bg-primary/5">
@@ -344,7 +405,7 @@ export function MealExpensesPage() {
                     name="description"
                     error={addForm.touched.description ? addForm.errors.description : undefined}
                   />
-                  
+
                   {isManager && (
                     <div className="space-y-1.5">
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -388,7 +449,7 @@ export function MealExpensesPage() {
                     </label>
                   </div>
                 )}
-                
+
                 <div className="flex justify-center pt-2">
                   <Button
                     type="submit"
@@ -409,8 +470,11 @@ export function MealExpensesPage() {
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
                 Meal Expense Records
+                <Badge variant="neutral" size="sm">
+                  {filteredExpenses.length} {filteredExpenses.length === 1 ? "Expense" : "Expenses"}
+                </Badge>
               </h2>
               <select
                 className="w-full sm:w-48 px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm text-neutral-900 dark:text-white transition-all"
@@ -500,8 +564,8 @@ export function MealExpensesPage() {
                                 expense.status === "approved"
                                   ? "success"
                                   : expense.status === "pending"
-                                  ? "warning"
-                                  : "error"
+                                    ? "warning"
+                                    : "error"
                               }
                             >
                               {expense.status.charAt(0).toUpperCase() + expense.status.slice(1)}
@@ -694,11 +758,10 @@ export function MealExpensesPage() {
                     className="sr-only"
                   />
                   <div
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                      addDeposit
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${addDeposit
                         ? "bg-primary border-primary"
                         : "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                    }`}
+                      }`}
                     onClick={() => setAddDeposit((v) => !v)}
                   >
                     {addDeposit && (
@@ -760,8 +823,8 @@ export function MealExpensesPage() {
           >
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={confirmDelete}
             isLoading={deleteMealExpense.isPending}
           >

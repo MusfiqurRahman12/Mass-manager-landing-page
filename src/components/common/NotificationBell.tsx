@@ -105,7 +105,7 @@ export function NotificationBell() {
 
   const loadNotifications = async () => {
     try {
-      const [notifs, countData] = await Promise.all([
+      const [notifs] = await Promise.all([
         notificationService.getNotifications({ limit: 50 }), // Get more to account for filtering
         notificationService.getUnreadCount(),
       ]);
@@ -114,20 +114,17 @@ export function NotificationBell() {
       const savedNotifications = localStorage.getItem("notifications");
       const prefs = savedNotifications ? JSON.parse(savedNotifications) : null;
 
-      if (!prefs) {
-        setNotifications(notifs.slice(0, 5));
-        setUnreadCount(countData.unread_count);
-        return;
-      }
 
       // Filter logic
       const filteredNotifs = notifs.filter((n) => {
         // Filter by user preferences
-        if (n.type.startsWith("meal_") && !prefs.meal_updates) return false;
-        if (n.type.startsWith("expense_") && !prefs.expense_updates) return false;
-        if (n.type.startsWith("deposit_") && !prefs.deposit_updates) return false;
-        if (n.type.startsWith("manager_transfer") && !prefs.manager_transfer) return false;
-        if (n.type === "market_day_reminder" && !prefs.market_day_reminder) return false;
+        const mealEnabled = prefs ? prefs.meal_updates : false;
+        if (n.type.startsWith("meal_") && !mealEnabled) return false;
+        
+        if (n.type.startsWith("expense_") && prefs && !prefs.expense_updates) return false;
+        if (n.type.startsWith("deposit_") && prefs && !prefs.deposit_updates) return false;
+        if (n.type.startsWith("manager_transfer") && prefs && !prefs.manager_transfer) return false;
+        if (n.type === "market_day_reminder" && prefs && !prefs.market_day_reminder) return false;
         
         // Filter by locally dismissed IDs
         const savedDismissed = localStorage.getItem("bell_dismissed_notifications");

@@ -3,6 +3,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
+  FileText,
   Home,
   LifeBuoy,
   PiggyBank,
@@ -52,6 +53,12 @@ const navItems: NavItem[] = [
     path: "/month-history",
   },
   {
+    label: "My Statement",
+    icon: <FileText className="w-5 h-5" />,
+    path: "/my-statement",
+    managerOnly: true,
+  },
+  {
     label: "Settings",
     icon: <Settings className="w-5 h-5" />,
     path: "/settings",
@@ -60,6 +67,7 @@ const navItems: NavItem[] = [
     label: "Support",
     icon: <LifeBuoy className="w-5 h-5" />,
     path: "/support",
+    managerOnly: true,
   },
 ];
 
@@ -169,54 +177,64 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
           {navBeforeExpenses.map(renderNavItem)}
 
           {/* Expense Module Group */}
-          <div className="pt-1">
-            <button
-              onClick={() => setExpenseGroupOpen(!expenseGroupOpen)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 font-medium",
-                isExpenseGroupActive
-                  ? "bg-primary/5 text-primary dark:bg-primary/10"
-                  : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-white",
-              )}
-            >
-              {expenseNavGroup.icon}
-              <span className="flex-1 text-left">{expenseNavGroup.label}</span>
-              {expenseGroupOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
+          {user?.role === "manager" ? (
+            <div className="pt-1">
+              <button
+                onClick={() => setExpenseGroupOpen(!expenseGroupOpen)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 font-medium",
+                  isExpenseGroupActive
+                    ? "bg-primary/5 text-primary dark:bg-primary/10"
+                    : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-white",
+                )}
+              >
+                {expenseNavGroup.icon}
+                <span className="flex-1 text-left">{expenseNavGroup.label}</span>
+                {expenseGroupOpen ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </button>
 
-            {/* Expanded Children */}
-            {expenseGroupOpen && (
-              <div className="ml-4 mt-1 space-y-1">
-                {filteredExpenseChildren.map((child) => {
-                  const isActive = location.pathname === child.path;
-                  return (
-                    <Link
-                      key={child.path}
-                      to={child.path}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium",
-                        isActive
-                          ? "bg-primary/10 text-primary dark:bg-primary/20"
-                          : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-white",
-                      )}
-                      onClick={onClose}
-                    >
-                      {child.icon}
-                      <span>{child.label}</span>
-                      {isActive && <ChevronRight className="ml-auto w-3 h-3" />}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+              {/* Expanded Children */}
+              {expenseGroupOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  {filteredExpenseChildren.map((child) => {
+                    const isActive = location.pathname === child.path;
+                    return (
+                      <Link
+                        key={child.path}
+                        to={child.path}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium",
+                          isActive
+                            ? "bg-primary/10 text-primary dark:bg-primary/20"
+                            : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-white",
+                        )}
+                        onClick={onClose}
+                      >
+                        {child.icon}
+                        <span>{child.label}</span>
+                        {isActive && <ChevronRight className="ml-auto w-3 h-3" />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            renderNavItem({
+              label: "Meal Expenses",
+              icon: <Receipt className="w-5 h-5" />,
+              path: "/meal-expenses",
+            })
+          )}
 
-          {/* After Expenses: Reports, Month History, Settings */}
-          {navAfterExpenses.map(renderNavItem)}
+          {/* After Expenses: Reports, Month History, Settings, Support */}
+          {navAfterExpenses
+            .filter((item) => !item.managerOnly || user?.role === "manager")
+            .map(renderNavItem)}
         </nav>
       </aside>
     </>
