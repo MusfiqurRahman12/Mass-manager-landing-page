@@ -69,7 +69,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto"
           >
-            <Link to="/register" className="w-full sm:w-auto">
+            <Link to="/#pricing" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/45 transition-all transform hover:-translate-y-0.5">
                 Start Your Mess Free
               </Button>
