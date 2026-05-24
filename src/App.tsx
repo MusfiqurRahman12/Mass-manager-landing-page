@@ -21,7 +21,7 @@ const ChatPage = lazy(() => import("./pages/ChatPage").then(m => ({ default: m.C
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then(m => ({ default: m.DashboardPage })));
 const DepositsPage = lazy(() => import("./pages/DepositsPage").then(m => ({ default: m.DepositsPage })));
 const ExpenseSummaryPage = lazy(() => import("./pages/ExpenseSummaryPage").then(m => ({ default: m.ExpenseSummaryPage })));
-const HomePage = lazy(() => import("./pages/HomePage").then(m => ({ default: m.HomePage })));
+const LandingPage = lazy(() => import("./pages/landing/LandingPage").then(m => ({ default: m.LandingPage })));
 const HomeRentExpensePage = lazy(() => import("./pages/HomeRentExpensePage").then(m => ({ default: m.HomeRentExpensePage })));
 const LoginPage = lazy(() => import("./pages/LoginPage").then(m => ({ default: m.LoginPage })));
 const MealExpensesPage = lazy(() => import("./pages/MealExpensesPage").then(m => ({ default: m.MealExpensesPage })));
@@ -101,7 +101,7 @@ function App() {
         <Suspense fallback={<LoadingSpinner fullScreen />}>
           <Routes>
             {/* ── Public Routes ─────────────────────────────────── */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
