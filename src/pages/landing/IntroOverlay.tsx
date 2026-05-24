@@ -81,7 +81,7 @@ export function IntroOverlay() {
             
             {/* Neon Glow burst behind the laptop */}
             <motion.div
-              variants={glowVariants}
+              variants={glowVariants as any}
               initial="closed"
               animate={phase === "opening" ? "opening" : "closed"}
               className="absolute w-[85%] aspect-[16/10] bg-transparent rounded-2xl pointer-events-none"
@@ -93,7 +93,7 @@ export function IntroOverlay() {
               
               {/* Lid — rotates open around bottom hinge */}
               <motion.div
-                variants={lidVariants}
+                variants={lidVariants as any}
                 initial="closed"
                 animate={phase === "opening" ? "opening" : "closed"}
                 className="relative w-[85%] aspect-[16/10]"

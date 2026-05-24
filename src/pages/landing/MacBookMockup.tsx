@@ -68,7 +68,7 @@ export function MacBookMockup({
         {/* Neon Glow Leak & Flush (Leaks around the closed screen and flashes on open) */}
         {animateOpen && (
           <motion.div
-            variants={glowVariants}
+            variants={glowVariants as any}
             initial="closed"
             animate="open"
             className="absolute w-[83%] aspect-[16/10] bg-neutral-900/10 rounded-2xl pointer-events-none"
@@ -81,7 +81,7 @@ export function MacBookMockup({
 
         {/* Lid / Screen with 3D rotation around bottom hinge */}
         <motion.div 
-          variants={lidVariants}
+          variants={lidVariants as any}
           initial={animateOpen ? "closed" : "open"}
           animate="open"
           className="relative w-[85%] aspect-[16/10]"
